@@ -1,40 +1,11 @@
 from django.db import models
+from apps.companies.models import Company
 
 
 class Document(models.Model):
-    """
-    Загруженный пользователем документ.
-    """
-
-    class Status(models.TextChoices):
-        UPLOADED = "uploaded", "Uploaded"
-        OCR = "ocr", "OCR completed"
-        VERIFIED = "verified", "Verified"
-        ERROR = "error", "Error"
-
-    original_file = models.FileField(
-        upload_to="documents/%Y/%m/%d/"
-    )
-
-    filename = models.CharField(
-        max_length=255
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.UPLOADED,
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    title = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.filename
+        return self.title
 
 

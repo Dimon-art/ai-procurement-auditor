@@ -1,3 +1,5 @@
+from pathlib import Path
+from tempfile import gettempdir
 from unittest.mock import Mock, patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -8,6 +10,7 @@ from apps.documents.models import Document, OCRResult
 from apps.documents.services.document_ocr import process_document_ocr
 from apps.documents.services.failing_ocr import FailingOCRService
 from apps.documents.services.mock_ocr import MockOCRService
+from apps.documents.services.ocr_factory import get_ocr_service
 from apps.documents.services.yandex_ocr import YandexOCRService
 
 
@@ -109,6 +112,24 @@ class DocumentOCRTests(TestCase):
         )
 
 
+class OCRFactoryTests(TestCase):
+    """
+    Tests for OCR provider selection.
+    """
+
+    def test_get_mock_service(self):
+        service = get_ocr_service("mock")
+
+        self.assertEqual(
+            service.provider_name,
+            "mock",
+        )
+
+    def test_unknown_provider_raises_error(self):
+        with self.assertRaises(ValueError):
+            get_ocr_service("unknown")
+
+
 class YandexOCRServiceTests(TestCase):
     """
     Tests for the Yandex OCR adapter.
@@ -155,9 +176,6 @@ class YandexOCRServiceTests(TestCase):
         )
 
     def _create_test_image(self):
-        from pathlib import Path
-        from tempfile import gettempdir
-
         path = Path(gettempdir()) / "yandex_ocr_test.png"
         path.write_bytes(b"fake image content")
 

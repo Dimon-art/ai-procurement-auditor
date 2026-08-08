@@ -88,7 +88,7 @@ class DocumentOCRTests(TestCase):
 
         self.assertEqual(
             result.provider,
-            "FailingOCRService",
+            "failing",
         )
 
         self.assertEqual(

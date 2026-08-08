@@ -9,7 +9,7 @@ def process_document_ocr(
     ocr_service: OCRService,
 ) -> OCRResult:
     """
-    Запускает OCR для документа и сохраняет результат.
+    Run OCR for a document and persist the result.
     """
 
     document.status = Document.Status.OCR_PROCESSING
@@ -26,7 +26,7 @@ def process_document_ocr(
 
         ocr_result = OCRResult.objects.create(
             document=document,
-            provider=ocr_service.__class__.__name__,
+            provider=ocr_service.provider_name,
             raw_text=response.text,
             raw_response=response.raw_response,
             confidence=response.confidence,
@@ -45,7 +45,7 @@ def process_document_ocr(
 
         OCRResult.objects.create(
             document=document,
-            provider=ocr_service.__class__.__name__,
+            provider=ocr_service.provider_name,
             processing_time_ms=processing_time_ms,
             error_message=str(exc),
         )

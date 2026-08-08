@@ -3,11 +3,13 @@ from apps.documents.services.ocr import OCRResponse, OCRService
 
 class FailingOCRService(OCRService):
     """
-    Тестовый OCR-сервис, который всегда завершается ошибкой.
+    Test OCR service that always simulates a provider failure.
     """
+
+    provider_name = "failing"
 
     def recognize(self, file_path: str) -> OCRResponse:
         """
-        Имитирует сбой внешнего OCR-провайдера.
+        Simulate an OCR provider failure.
         """
         raise RuntimeError("Mock OCR provider failure")

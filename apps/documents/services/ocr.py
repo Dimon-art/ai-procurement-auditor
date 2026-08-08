@@ -6,7 +6,7 @@ from typing import Any
 @dataclass
 class OCRResponse:
     """
-    Нормализованный результат OCR-распознавания.
+    Normalized result returned by an OCR provider.
     """
 
     text: str
@@ -16,12 +16,14 @@ class OCRResponse:
 
 class OCRService(ABC):
     """
-    Базовый интерфейс для OCR-провайдеров.
+    Base interface for OCR providers.
     """
+
+    provider_name: str
 
     @abstractmethod
     def recognize(self, file_path: str) -> OCRResponse:
         """
-        Распознаёт документ и возвращает нормализованный OCR-результат.
+        Recognize a document and return a normalized OCR result.
         """
         raise NotImplementedError

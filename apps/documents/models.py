@@ -8,7 +8,8 @@ class Document(models.Model):
 
     class Status(models.TextChoices):
         UPLOADED = "uploaded", "Uploaded"
-        OCR = "ocr", "OCR completed"
+        OCR_PROCESSING = "ocr_processing", "OCR processing"
+        OCR_COMPLETED = "ocr_completed", "OCR completed"
         VERIFIED = "verified", "Verified"
         ERROR = "error", "Error"
 
@@ -43,4 +44,44 @@ class Document(models.Model):
     def __str__(self):
         return self.filename
 
+
+class OCRResult(models.Model):
+    """
+    Результат одной попытки OCR-распознавания документа.
+    """
+
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="ocr_results",
+    )
+
+    provider = models.CharField(
+        max_length=50,
+    )
+
+    raw_text = models.TextField(
+        blank=True,
+    )
+
+    raw_response = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    confidence = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    error_message = models.TextField(
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    def __str__(self):
+        return f"OCR #{self.pk} for {self.document}"
 

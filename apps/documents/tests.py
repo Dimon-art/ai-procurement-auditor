@@ -117,17 +117,25 @@ class OCRFactoryTests(TestCase):
     Tests for OCR provider selection.
     """
 
-    def test_get_mock_service(self):
-        service = get_ocr_service("mock")
+    @patch(
+        "django.conf.settings.OCR_PROVIDER",
+        "yandex",
+    )
+    def test_get_configured_service(self):
+        service = get_ocr_service()
 
         self.assertEqual(
             service.provider_name,
-            "mock",
+            "yandex",
         )
 
+    @patch(
+        "django.conf.settings.OCR_PROVIDER",
+        "unknown",
+    )
     def test_unknown_provider_raises_error(self):
         with self.assertRaises(ValueError):
-            get_ocr_service("unknown")
+            get_ocr_service()
 
 
 class YandexOCRServiceTests(TestCase):
@@ -142,12 +150,15 @@ class YandexOCRServiceTests(TestCase):
             "YANDEX_FOLDER_ID": "test-folder-id",
         },
     )
-    @patch("apps.documents.services.yandex_ocr.requests.post")
+    @patch(
+        "apps.documents.services.yandex_ocr.requests.post"
+    )
     def test_recognize_extracts_full_text(
         self,
         mock_post,
     ):
         mock_response = Mock()
+
         mock_response.json.return_value = {
             "result": {
                 "textAnnotation": {
@@ -155,6 +166,7 @@ class YandexOCRServiceTests(TestCase):
                 },
             },
         }
+
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
 
@@ -177,6 +189,9 @@ class YandexOCRServiceTests(TestCase):
 
     def _create_test_image(self):
         path = Path(gettempdir()) / "yandex_ocr_test.png"
-        path.write_bytes(b"fake image content")
+
+        path.write_bytes(
+            b"fake image content"
+        )
 
         return path

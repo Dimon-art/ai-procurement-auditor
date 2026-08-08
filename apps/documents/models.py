@@ -74,6 +74,11 @@ class OCRResult(models.Model):
         blank=True,
     )
 
+    processing_time_ms = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
     error_message = models.TextField(
         blank=True,
     )

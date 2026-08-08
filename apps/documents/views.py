@@ -1,12 +1,14 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 
 from apps.companies.models import Company
 from apps.documents.models import Document
+from apps.documents.services.document_ocr import process_document_ocr
+from apps.documents.services.ocr_factory import get_ocr_service
 
 
 def upload_document(request):
     """
-    Upload document and save it.
+    Upload document and run OCR.
     """
 
     companies = Company.objects.all()
@@ -24,6 +26,15 @@ def upload_document(request):
             original_file=uploaded_file,
             filename=uploaded_file.name,
         )
+
+        ocr_service = get_ocr_service()
+
+        process_document_ocr(
+            document,
+            ocr_service,
+        )
+
+        document.refresh_from_db()
 
         return render(
             request,

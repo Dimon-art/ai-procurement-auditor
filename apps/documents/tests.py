@@ -1,3 +1,5 @@
+from unittest.mock import Mock, patch
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
@@ -6,6 +8,7 @@ from apps.documents.models import Document, OCRResult
 from apps.documents.services.document_ocr import process_document_ocr
 from apps.documents.services.failing_ocr import FailingOCRService
 from apps.documents.services.mock_ocr import MockOCRService
+from apps.documents.services.yandex_ocr import YandexOCRService
 
 
 class DocumentOCRTests(TestCase):
@@ -104,3 +107,58 @@ class DocumentOCRTests(TestCase):
             result.processing_time_ms,
             0,
         )
+
+
+class YandexOCRServiceTests(TestCase):
+    """
+    Tests for the Yandex OCR adapter.
+    """
+
+    @patch.dict(
+        "os.environ",
+        {
+            "YANDEX_OCR_API_KEY": "test-api-key",
+            "YANDEX_FOLDER_ID": "test-folder-id",
+        },
+    )
+    @patch("apps.documents.services.yandex_ocr.requests.post")
+    def test_recognize_extracts_full_text(
+        self,
+        mock_post,
+    ):
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "result": {
+                "textAnnotation": {
+                    "fullText": "Recognized invoice text",
+                },
+            },
+        }
+        mock_response.raise_for_status.return_value = None
+        mock_post.return_value = mock_response
+
+        service = YandexOCRService()
+
+        response = service.recognize(
+            self.document_path,
+        )
+
+        self.assertEqual(
+            response.text,
+            "Recognized invoice text",
+        )
+
+    @property
+    def document_path(self):
+        return str(
+            self._create_test_image()
+        )
+
+    def _create_test_image(self):
+        from pathlib import Path
+        from tempfile import gettempdir
+
+        path = Path(gettempdir()) / "yandex_ocr_test.png"
+        path.write_bytes(b"fake image content")
+
+        return path

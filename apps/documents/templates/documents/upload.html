@@ -18,8 +18,23 @@
             Статус:
             {{ uploaded_document.status }}
         </p>
-    {% endif %}
 
+        {% if ocr_result %}
+            {% if ocr_result.raw_text %}
+                <div>
+                    <h2>Распознанный текст</h2>
+                    <pre>{{ ocr_result.raw_text }}</pre>
+                </div>
+            {% endif %}
+
+            {% if ocr_result.error_message %}
+                <div>
+                    <h2>Ошибка OCR</h2>
+                    <p>{{ ocr_result.error_message }}</p>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -38,7 +53,6 @@
             </select>
         </div>
 
-
         <div>
             <label for="document">
                 Документ:
@@ -53,11 +67,9 @@
             >
         </div>
 
-
         <button type="submit">
             Загрузить
         </button>
     </form>
-
 </body>
 </html>

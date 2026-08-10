@@ -229,6 +229,29 @@ class DocumentUploadViewTests(TestCase):
 
     @patch(
         "apps.documents.views.get_ocr_service",
+        return_value=MockOCRService(),
+    )
+    def test_successful_upload_shows_ocr_text(
+        self,
+        mock_get_ocr_service,
+    ):
+        response = self.client.post(
+            "/documents/upload/",
+            {
+                "company": self.company.id,
+                "document": SimpleUploadedFile(
+                    "success_invoice.pdf",
+                    b"fake pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Mock OCR text")
+
+    @patch(
+        "apps.documents.views.get_ocr_service",
         return_value=FailingOCRService(),
     )
     def test_ocr_failure_does_not_crash_upload_view(

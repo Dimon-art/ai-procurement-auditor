@@ -39,12 +39,17 @@ def upload_document(request):
 
         document.refresh_from_db()
 
+        ocr_result = document.ocr_results.order_by(
+            "-created_at"
+        ).first()
+
         return render(
             request,
             "documents/upload.html",
             {
                 "companies": companies,
                 "uploaded_document": document,
+                "ocr_result": ocr_result,
             },
         )
 

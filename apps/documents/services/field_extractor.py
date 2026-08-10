@@ -21,6 +21,13 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    DOCUMENT_NUMBER_PATTERN = re.compile(
+        r"(?:сч[её]т|упд|накладная|документ)"
+        r"\s*(?:№|N|No\.?)?\s*"
+        r"([A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9/_\-]*)",
+        re.IGNORECASE,
+    )
+
     def extract_supplier_inn(
         self,
         text: str,
@@ -43,6 +50,33 @@ class FieldExtractor:
             field_name="supplier_inn",
             raw_value=inn,
             normalized_value=inn,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_document_number(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        """
+        Extract document number from OCR text.
+        """
+
+        if not text:
+            return None
+
+        match = self.DOCUMENT_NUMBER_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        raw_number = match.group(1)
+        normalized_number = raw_number.strip()
+
+        return ExtractedField(
+            field_name="document_number",
+            raw_value=raw_number,
+            normalized_value=normalized_number,
             confidence=1.0,
             extraction_method="regex",
         )

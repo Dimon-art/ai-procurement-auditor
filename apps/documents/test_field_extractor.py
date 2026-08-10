@@ -56,3 +56,68 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_supplier_inn(text)
 
         self.assertIsNone(result)
+
+    def test_extract_document_number(self):
+        text = """
+        ООО "Тестовый поставщик"
+        Счет № 12345
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_document_number(text)
+
+        self.assertIsNotNone(result)
+
+        self.assertEqual(
+            result.field_name,
+            "document_number",
+        )
+
+        self.assertEqual(
+            result.raw_value,
+            "12345",
+        )
+
+        self.assertEqual(
+            result.normalized_value,
+            "12345",
+        )
+
+        self.assertEqual(
+            result.confidence,
+            1.0,
+        )
+
+        self.assertEqual(
+            result.extraction_method,
+            "regex",
+        )
+
+    def test_extract_document_number_with_letters(self):
+        text = """
+        УПД № А-123/45
+        """
+
+        result = self.extractor.extract_document_number(text)
+
+        self.assertIsNotNone(result)
+
+        self.assertEqual(
+            result.raw_value,
+            "А-123/45",
+        )
+
+        self.assertEqual(
+            result.normalized_value,
+            "А-123/45",
+        )
+
+    def test_extract_document_number_returns_none_when_missing(self):
+        text = """
+        ООО "Тестовый поставщик"
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_document_number(text)
+
+        self.assertIsNone(result)

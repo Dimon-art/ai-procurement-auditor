@@ -221,3 +221,39 @@ class YandexOCRServiceTests(TestCase):
         )
 
         return path
+class DocumentUploadViewTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(
+            name="Upload Test Company",
+        )
+
+    @patch(
+        "apps.documents.views.get_ocr_service",
+        return_value=FailingOCRService(),
+    )
+    def test_ocr_failure_does_not_crash_upload_view(
+        self,
+        mock_get_ocr_service,
+    ):
+        response = self.client.post(
+            "/documents/upload/",
+            {
+                "company": self.company.id,
+                "document": SimpleUploadedFile(
+                    "failed_invoice.pdf",
+                    b"fake pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        document = Document.objects.get(
+            filename="failed_invoice.pdf"
+        )
+
+        self.assertEqual(
+            document.status,
+            Document.Status.ERROR,
+        )

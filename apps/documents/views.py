@@ -29,10 +29,13 @@ def upload_document(request):
 
         ocr_service = get_ocr_service()
 
-        process_document_ocr(
-            document,
-            ocr_service,
-        )
+        try:
+            process_document_ocr(
+                document,
+                ocr_service,
+            )
+        except Exception:
+            pass
 
         document.refresh_from_db()
 

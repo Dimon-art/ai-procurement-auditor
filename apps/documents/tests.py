@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import gettempdir
 from unittest.mock import Mock, patch
 
+import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
@@ -180,6 +181,31 @@ class YandexOCRServiceTests(TestCase):
             response.text,
             "Recognized invoice text",
         )
+
+    @patch.dict(
+        "os.environ",
+        {
+            "YANDEX_OCR_API_KEY": "test-api-key",
+            "YANDEX_FOLDER_ID": "test-folder-id",
+        },
+    )
+    @patch(
+        "apps.documents.services.yandex_ocr.requests.post"
+    )
+    def test_recognize_raises_on_timeout(
+        self,
+        mock_post,
+    ):
+        mock_post.side_effect = requests.Timeout(
+            "Yandex OCR request timed out"
+        )
+
+        service = YandexOCRService()
+
+        with self.assertRaises(requests.Timeout):
+            service.recognize(
+                self.document_path,
+            )
 
     @property
     def document_path(self):

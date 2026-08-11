@@ -28,6 +28,11 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    DOCUMENT_TYPE_PATTERN = re.compile(
+        r"\b(сч[её]т|упд|накладная)\b",
+        re.IGNORECASE,
+    )
+
     DOCUMENT_NUMBER_PATTERN = re.compile(
         r"(?:сч[её]т|упд|накладная|документ)"
         r"\s*(?:№|N|No\.?)?\s*"
@@ -103,6 +108,36 @@ class FieldExtractor:
             field_name="supplier_kpp",
             raw_value=kpp,
             normalized_value=kpp,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_document_type(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        if not text:
+            return None
+
+        match = self.DOCUMENT_TYPE_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        raw_type = match.group(1)
+        type_lower = raw_type.lower().replace("ё", "е")
+
+        if type_lower == "счет":
+            normalized_type = "invoice"
+        elif type_lower == "упд":
+            normalized_type = "upd"
+        else:
+            normalized_type = "waybill"
+
+        return ExtractedField(
+            field_name="document_type",
+            raw_value=raw_type,
+            normalized_value=normalized_type,
             confidence=1.0,
             extraction_method="regex",
         )

@@ -322,3 +322,49 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_currency(text)
 
         self.assertIsNone(result)
+        
+    def test_extract_document_type_invoice(self):
+        text = """
+        Счет № 12345
+        """
+
+        result = self.extractor.extract_document_type(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.field_name, "document_type")
+        self.assertEqual(result.raw_value, "Счет")
+        self.assertEqual(result.normalized_value, "invoice")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
+
+    def test_extract_document_type_upd(self):
+        text = """
+        УПД № А-123/45
+        """
+
+        result = self.extractor.extract_document_type(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "УПД")
+        self.assertEqual(result.normalized_value, "upd")
+
+    def test_extract_document_type_waybill(self):
+        text = """
+        Накладная № 456
+        """
+
+        result = self.extractor.extract_document_type(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "Накладная")
+        self.assertEqual(result.normalized_value, "waybill")
+
+    def test_extract_document_type_returns_none_when_missing(self):
+        text = """
+        ООО "Тестовый поставщик"
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_document_type(text)
+
+        self.assertIsNone(result) 

@@ -194,3 +194,86 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_document_date(text)
 
         self.assertIsNone(result)
+
+    def test_extract_total_amount(self):
+        text = """
+        Счет № 12345
+        Итого: 12 345,67
+        """
+
+        result = self.extractor.extract_total_amount(text)
+
+        self.assertIsNotNone(result)
+
+        self.assertEqual(
+            result.field_name,
+            "total_amount",
+        )
+
+        self.assertEqual(
+            result.raw_value,
+            "12 345,67",
+        )
+
+        self.assertEqual(
+            result.normalized_value,
+            "12345.67",
+        )
+
+        self.assertEqual(
+            result.confidence,
+            1.0,
+        )
+
+        self.assertEqual(
+            result.extraction_method,
+            "regex",
+        )
+
+    def test_extract_total_amount_with_dot(self):
+        text = """
+        ИТОГО 500.00
+        """
+
+        result = self.extractor.extract_total_amount(text)
+
+        self.assertIsNotNone(result)
+
+        self.assertEqual(
+            result.raw_value,
+            "500.00",
+        )
+
+        self.assertEqual(
+            result.normalized_value,
+            "500.00",
+        )
+
+    def test_extract_total_amount_with_payment_label(self):
+        text = """
+        К оплате: 1 250,00
+        """
+
+        result = self.extractor.extract_total_amount(text)
+
+        self.assertIsNotNone(result)
+
+        self.assertEqual(
+            result.raw_value,
+            "1 250,00",
+        )
+
+        self.assertEqual(
+            result.normalized_value,
+            "1250.00",
+        )
+
+    def test_extract_total_amount_returns_none_when_missing(self):
+        text = """
+        ООО "Тестовый поставщик"
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_total_amount(text)
+
+        self.assertIsNone(result)

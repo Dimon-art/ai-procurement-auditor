@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 
 @dataclass
@@ -33,6 +34,13 @@ class FieldExtractor:
         r"(?:от|дата)"
         r"\s*[:№]?\s*"
         r"(\d{1,2}\.\d{1,2}\.\d{4})",
+        re.IGNORECASE,
+    )
+
+    TOTAL_AMOUNT_PATTERN = re.compile(
+        r"(?:итого|к\s+оплате)"
+        r"\s*:?\s*"
+        r"(\d[\d\s]*(?:[.,]\d{1,2})?)",
         re.IGNORECASE,
     )
 
@@ -121,6 +129,45 @@ class FieldExtractor:
             field_name="document_date",
             raw_value=raw_date,
             normalized_value=normalized_date,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_total_amount(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        """
+        Extract and normalize total document amount.
+        """
+
+        if not text:
+            return None
+
+        match = self.TOTAL_AMOUNT_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        raw_amount = match.group(1).strip()
+
+        normalized_candidate = (
+            raw_amount
+            .replace(" ", "")
+            .replace(",", ".")
+        )
+
+        try:
+            normalized_amount = str(
+                Decimal(normalized_candidate)
+            )
+        except InvalidOperation:
+            return None
+
+        return ExtractedField(
+            field_name="total_amount",
+            raw_value=raw_amount,
+            normalized_value=normalized_amount,
             confidence=1.0,
             extraction_method="regex",
         )

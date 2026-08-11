@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass
@@ -25,6 +26,13 @@ class FieldExtractor:
         r"(?:сч[её]т|упд|накладная|документ)"
         r"\s*(?:№|N|No\.?)?\s*"
         r"([A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9/_\-]*)",
+        re.IGNORECASE,
+    )
+
+    DOCUMENT_DATE_PATTERN = re.compile(
+        r"(?:от|дата)"
+        r"\s*[:№]?\s*"
+        r"(\d{1,2}\.\d{1,2}\.\d{4})",
         re.IGNORECASE,
     )
 
@@ -77,6 +85,42 @@ class FieldExtractor:
             field_name="document_number",
             raw_value=raw_number,
             normalized_value=normalized_number,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_document_date(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        """
+        Extract and normalize document date from OCR text.
+        """
+
+        if not text:
+            return None
+
+        match = self.DOCUMENT_DATE_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        raw_date = match.group(1)
+
+        try:
+            parsed_date = datetime.strptime(
+                raw_date,
+                "%d.%m.%Y",
+            )
+        except ValueError:
+            return None
+
+        normalized_date = parsed_date.date().isoformat()
+
+        return ExtractedField(
+            field_name="document_date",
+            raw_value=raw_date,
+            normalized_value=normalized_date,
             confidence=1.0,
             extraction_method="regex",
         )

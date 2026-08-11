@@ -121,3 +121,76 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_document_number(text)
 
         self.assertIsNone(result)
+
+    def test_extract_document_date(self):
+        text = """
+        Счет № 12345
+        от 10.08.2026
+        """
+
+        result = self.extractor.extract_document_date(text)
+
+        self.assertIsNotNone(result)
+
+        self.assertEqual(
+            result.field_name,
+            "document_date",
+        )
+
+        self.assertEqual(
+            result.raw_value,
+            "10.08.2026",
+        )
+
+        self.assertEqual(
+            result.normalized_value,
+            "2026-08-10",
+        )
+
+        self.assertEqual(
+            result.confidence,
+            1.0,
+        )
+
+        self.assertEqual(
+            result.extraction_method,
+            "regex",
+        )
+
+    def test_extract_document_date_with_date_label(self):
+        text = """
+        Дата: 01.12.2025
+        """
+
+        result = self.extractor.extract_document_date(text)
+
+        self.assertIsNotNone(result)
+
+        self.assertEqual(
+            result.raw_value,
+            "01.12.2025",
+        )
+
+        self.assertEqual(
+            result.normalized_value,
+            "2025-12-01",
+        )
+
+    def test_extract_document_date_returns_none_for_invalid_date(self):
+        text = """
+        Дата: 32.13.2026
+        """
+
+        result = self.extractor.extract_document_date(text)
+
+        self.assertIsNone(result)
+
+    def test_extract_document_date_returns_none_when_missing(self):
+        text = """
+        ООО "Тестовый поставщик"
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_document_date(text)
+
+        self.assertIsNone(result)

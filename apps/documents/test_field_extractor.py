@@ -37,6 +37,51 @@ class FieldExtractorTests(SimpleTestCase):
 
         self.assertIsNone(result)
 
+    def test_extract_supplier_kpp(self):
+        text = """
+        ООО "Тестовый поставщик"
+        КПП 770401001
+        """
+
+        result = self.extractor.extract_supplier_kpp(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.field_name, "supplier_kpp")
+        self.assertEqual(result.raw_value, "770401001")
+        self.assertEqual(result.normalized_value, "770401001")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
+
+    def test_extract_supplier_kpp_with_colon(self):
+        text = """
+        КПП: 770401001
+        """
+
+        result = self.extractor.extract_supplier_kpp(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "770401001")
+        self.assertEqual(result.normalized_value, "770401001")
+
+    def test_extract_supplier_kpp_returns_none_for_invalid_length(self):
+        text = """
+        КПП 77040100
+        """
+
+        result = self.extractor.extract_supplier_kpp(text)
+
+        self.assertIsNone(result)
+
+    def test_extract_supplier_kpp_returns_none_when_missing(self):
+        text = """
+        ООО "Тестовый поставщик"
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_supplier_kpp(text)
+
+        self.assertIsNone(result)
+
     def test_extract_document_number(self):
         text = """
         ООО "Тестовый поставщик"

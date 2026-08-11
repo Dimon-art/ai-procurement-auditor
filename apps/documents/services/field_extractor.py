@@ -23,6 +23,11 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    KPP_PATTERN = re.compile(
+        r"\bКПП\s*[:№]?\s*(\d{9})\b",
+        re.IGNORECASE,
+    )
+
     DOCUMENT_NUMBER_PATTERN = re.compile(
         r"(?:сч[её]т|упд|накладная|документ)"
         r"\s*(?:№|N|No\.?)?\s*"
@@ -73,6 +78,32 @@ class FieldExtractor:
             field_name="supplier_inn",
             raw_value=inn,
             normalized_value=inn,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_supplier_kpp(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        """
+        Extract supplier KPP from OCR text.
+        """
+
+        if not text:
+            return None
+
+        match = self.KPP_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        kpp = match.group(1)
+
+        return ExtractedField(
+            field_name="supplier_kpp",
+            raw_value=kpp,
+            normalized_value=kpp,
             confidence=1.0,
             extraction_method="regex",
         )

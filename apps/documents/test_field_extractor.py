@@ -21,31 +21,11 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_supplier_inn(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.field_name,
-            "supplier_inn",
-        )
-
-        self.assertEqual(
-            result.raw_value,
-            "7704458262",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "7704458262",
-        )
-
-        self.assertEqual(
-            result.confidence,
-            1.0,
-        )
-
-        self.assertEqual(
-            result.extraction_method,
-            "regex",
-        )
+        self.assertEqual(result.field_name, "supplier_inn")
+        self.assertEqual(result.raw_value, "7704458262")
+        self.assertEqual(result.normalized_value, "7704458262")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
 
     def test_extract_supplier_inn_returns_none_when_missing(self):
         text = """
@@ -67,31 +47,11 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_document_number(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.field_name,
-            "document_number",
-        )
-
-        self.assertEqual(
-            result.raw_value,
-            "12345",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "12345",
-        )
-
-        self.assertEqual(
-            result.confidence,
-            1.0,
-        )
-
-        self.assertEqual(
-            result.extraction_method,
-            "regex",
-        )
+        self.assertEqual(result.field_name, "document_number")
+        self.assertEqual(result.raw_value, "12345")
+        self.assertEqual(result.normalized_value, "12345")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
 
     def test_extract_document_number_with_letters(self):
         text = """
@@ -101,16 +61,8 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_document_number(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.raw_value,
-            "А-123/45",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "А-123/45",
-        )
+        self.assertEqual(result.raw_value, "А-123/45")
+        self.assertEqual(result.normalized_value, "А-123/45")
 
     def test_extract_document_number_returns_none_when_missing(self):
         text = """
@@ -131,31 +83,11 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_document_date(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.field_name,
-            "document_date",
-        )
-
-        self.assertEqual(
-            result.raw_value,
-            "10.08.2026",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "2026-08-10",
-        )
-
-        self.assertEqual(
-            result.confidence,
-            1.0,
-        )
-
-        self.assertEqual(
-            result.extraction_method,
-            "regex",
-        )
+        self.assertEqual(result.field_name, "document_date")
+        self.assertEqual(result.raw_value, "10.08.2026")
+        self.assertEqual(result.normalized_value, "2026-08-10")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
 
     def test_extract_document_date_with_date_label(self):
         text = """
@@ -165,16 +97,8 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_document_date(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.raw_value,
-            "01.12.2025",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "2025-12-01",
-        )
+        self.assertEqual(result.raw_value, "01.12.2025")
+        self.assertEqual(result.normalized_value, "2025-12-01")
 
     def test_extract_document_date_returns_none_for_invalid_date(self):
         text = """
@@ -204,31 +128,11 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_total_amount(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.field_name,
-            "total_amount",
-        )
-
-        self.assertEqual(
-            result.raw_value,
-            "12 345,67",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "12345.67",
-        )
-
-        self.assertEqual(
-            result.confidence,
-            1.0,
-        )
-
-        self.assertEqual(
-            result.extraction_method,
-            "regex",
-        )
+        self.assertEqual(result.field_name, "total_amount")
+        self.assertEqual(result.raw_value, "12 345,67")
+        self.assertEqual(result.normalized_value, "12345.67")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
 
     def test_extract_total_amount_with_dot(self):
         text = """
@@ -238,16 +142,8 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_total_amount(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.raw_value,
-            "500.00",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "500.00",
-        )
+        self.assertEqual(result.raw_value, "500.00")
+        self.assertEqual(result.normalized_value, "500.00")
 
     def test_extract_total_amount_with_payment_label(self):
         text = """
@@ -257,16 +153,8 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_total_amount(text)
 
         self.assertIsNotNone(result)
-
-        self.assertEqual(
-            result.raw_value,
-            "1 250,00",
-        )
-
-        self.assertEqual(
-            result.normalized_value,
-            "1250.00",
-        )
+        self.assertEqual(result.raw_value, "1 250,00")
+        self.assertEqual(result.normalized_value, "1250.00")
 
     def test_extract_total_amount_returns_none_when_missing(self):
         text = """
@@ -275,5 +163,50 @@ class FieldExtractorTests(SimpleTestCase):
         """
 
         result = self.extractor.extract_total_amount(text)
+
+        self.assertIsNone(result)
+
+    def test_extract_vat_amount(self):
+        text = """
+        НДС: 90,16
+        """
+
+        result = self.extractor.extract_vat_amount(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.field_name, "vat_amount")
+        self.assertEqual(result.raw_value, "90,16")
+        self.assertEqual(result.normalized_value, "90.16")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
+
+    def test_extract_vat_amount_with_rate(self):
+        text = """
+        НДС 20% 1 250,00
+        """
+
+        result = self.extractor.extract_vat_amount(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "1 250,00")
+        self.assertEqual(result.normalized_value, "1250.00")
+
+    def test_extract_vat_amount_with_fraction_rate(self):
+        text = """
+        НДС 22/122% 90.16
+        """
+
+        result = self.extractor.extract_vat_amount(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "90.16")
+        self.assertEqual(result.normalized_value, "90.16")
+
+    def test_extract_vat_amount_returns_none_when_missing(self):
+        text = """
+        Итого: 500.00
+        """
+
+        result = self.extractor.extract_vat_amount(text)
 
         self.assertIsNone(result)

@@ -44,6 +44,13 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    VAT_AMOUNT_PATTERN = re.compile(
+        r"(?:ндс(?:\s+\d{1,2}(?:/\d{3})?%?)?)"
+        r"\s*:?\s*"
+        r"(\d[\d\s]*(?:[.,]\d{1,2})?)",
+        re.IGNORECASE,
+    )
+
     def extract_supplier_inn(
         self,
         text: str,
@@ -166,6 +173,45 @@ class FieldExtractor:
 
         return ExtractedField(
             field_name="total_amount",
+            raw_value=raw_amount,
+            normalized_value=normalized_amount,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_vat_amount(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        """
+        Extract and normalize VAT amount.
+        """
+
+        if not text:
+            return None
+
+        match = self.VAT_AMOUNT_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        raw_amount = match.group(1).strip()
+
+        normalized_candidate = (
+            raw_amount
+            .replace(" ", "")
+            .replace(",", ".")
+        )
+
+        try:
+            normalized_amount = str(
+                Decimal(normalized_candidate)
+            )
+        except InvalidOperation:
+            return None
+
+        return ExtractedField(
+            field_name="vat_amount",
             raw_value=raw_amount,
             normalized_value=normalized_amount,
             confidence=1.0,

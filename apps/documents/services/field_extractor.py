@@ -56,14 +56,17 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    CURRENCY_PATTERN = re.compile(
+        r"\b(RUB|USD|EUR)\b"
+        r"|(?<!\w)(₽|\$|€)(?!\w)"
+        r"|\b(руб(?:\.|лей|ля|ль)?)(?!\w)",
+        re.IGNORECASE,
+    )
+
     def extract_supplier_inn(
         self,
         text: str,
     ) -> ExtractedField | None:
-        """
-        Extract supplier INN from OCR text.
-        """
-
         if not text:
             return None
 
@@ -86,10 +89,6 @@ class FieldExtractor:
         self,
         text: str,
     ) -> ExtractedField | None:
-        """
-        Extract supplier KPP from OCR text.
-        """
-
         if not text:
             return None
 
@@ -112,10 +111,6 @@ class FieldExtractor:
         self,
         text: str,
     ) -> ExtractedField | None:
-        """
-        Extract document number from OCR text.
-        """
-
         if not text:
             return None
 
@@ -125,12 +120,11 @@ class FieldExtractor:
             return None
 
         raw_number = match.group(1)
-        normalized_number = raw_number.strip()
 
         return ExtractedField(
             field_name="document_number",
             raw_value=raw_number,
-            normalized_value=normalized_number,
+            normalized_value=raw_number.strip(),
             confidence=1.0,
             extraction_method="regex",
         )
@@ -139,10 +133,6 @@ class FieldExtractor:
         self,
         text: str,
     ) -> ExtractedField | None:
-        """
-        Extract and normalize document date from OCR text.
-        """
-
         if not text:
             return None
 
@@ -161,12 +151,10 @@ class FieldExtractor:
         except ValueError:
             return None
 
-        normalized_date = parsed_date.date().isoformat()
-
         return ExtractedField(
             field_name="document_date",
             raw_value=raw_date,
-            normalized_value=normalized_date,
+            normalized_value=parsed_date.date().isoformat(),
             confidence=1.0,
             extraction_method="regex",
         )
@@ -175,10 +163,6 @@ class FieldExtractor:
         self,
         text: str,
     ) -> ExtractedField | None:
-        """
-        Extract and normalize total document amount.
-        """
-
         if not text:
             return None
 
@@ -214,10 +198,6 @@ class FieldExtractor:
         self,
         text: str,
     ) -> ExtractedField | None:
-        """
-        Extract and normalize VAT amount.
-        """
-
         if not text:
             return None
 
@@ -245,6 +225,38 @@ class FieldExtractor:
             field_name="vat_amount",
             raw_value=raw_amount,
             normalized_value=normalized_amount,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_currency(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        if not text:
+            return None
+
+        match = self.CURRENCY_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        raw_currency = match.group(0)
+        currency_upper = raw_currency.upper()
+
+        if currency_upper in {"RUB", "USD", "EUR"}:
+            normalized_currency = currency_upper
+        elif raw_currency == "$":
+            normalized_currency = "USD"
+        elif raw_currency == "€":
+            normalized_currency = "EUR"
+        else:
+            normalized_currency = "RUB"
+
+        return ExtractedField(
+            field_name="currency",
+            raw_value=raw_currency,
+            normalized_value=normalized_currency,
             confidence=1.0,
             extraction_method="regex",
         )

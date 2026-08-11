@@ -255,3 +255,70 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_vat_amount(text)
 
         self.assertIsNone(result)
+
+    def test_extract_currency_rub_code(self):
+        text = """
+        Валюта: RUB
+        """
+
+        result = self.extractor.extract_currency(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.field_name, "currency")
+        self.assertEqual(result.raw_value, "RUB")
+        self.assertEqual(result.normalized_value, "RUB")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
+
+    def test_extract_currency_usd_code(self):
+        text = """
+        Валюта: USD
+        """
+
+        result = self.extractor.extract_currency(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "USD")
+        self.assertEqual(result.normalized_value, "USD")
+
+    def test_extract_currency_eur_symbol(self):
+        text = """
+        Итого: 500 €
+        """
+
+        result = self.extractor.extract_currency(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "€")
+        self.assertEqual(result.normalized_value, "EUR")
+
+    def test_extract_currency_dollar_symbol(self):
+        text = """
+        Итого: 500 $
+        """
+
+        result = self.extractor.extract_currency(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "$")
+        self.assertEqual(result.normalized_value, "USD")
+
+    def test_extract_currency_ruble_word(self):
+        text = """
+        Итого: 500 руб.
+        """
+
+        result = self.extractor.extract_currency(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.raw_value, "руб.")
+        self.assertEqual(result.normalized_value, "RUB")
+
+    def test_extract_currency_returns_none_when_missing(self):
+        text = """
+        Итого: 500.00
+        """
+
+        result = self.extractor.extract_currency(text)
+
+        self.assertIsNone(result)

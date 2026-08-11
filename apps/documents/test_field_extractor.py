@@ -368,3 +368,68 @@ class FieldExtractorTests(SimpleTestCase):
         result = self.extractor.extract_document_type(text)
 
         self.assertIsNone(result) 
+    
+    def test_extract_supplier_name(self):
+        text = """
+        Поставщик: ООО "Тестовый поставщик"
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_supplier_name(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.field_name, "supplier_name")
+        self.assertEqual(
+            result.raw_value,
+            'ООО "Тестовый поставщик"',
+        )
+        self.assertEqual(
+            result.normalized_value,
+            'ООО "Тестовый поставщик"',
+        )
+        self.assertEqual(result.confidence, 1.0)
+        self.assertEqual(result.extraction_method, "regex")
+
+    def test_extract_supplier_name_with_seller_label(self):
+        text = """
+        Продавец: ООО "Ромашка"
+        """
+
+        result = self.extractor.extract_supplier_name(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(
+            result.raw_value,
+            'ООО "Ромашка"',
+        )
+        self.assertEqual(
+            result.normalized_value,
+            'ООО "Ромашка"',
+        )
+
+    def test_extract_supplier_name_normalizes_spaces(self):
+        text = """
+        Поставщик: ООО   "Тестовый   поставщик"
+        """
+
+        result = self.extractor.extract_supplier_name(text)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(
+            result.raw_value,
+            'ООО   "Тестовый   поставщик"',
+        )
+        self.assertEqual(
+            result.normalized_value,
+            'ООО "Тестовый поставщик"',
+        )
+
+    def test_extract_supplier_name_returns_none_when_missing(self):
+        text = """
+        Счет № 12345
+        ИНН 7704458262
+        """
+
+        result = self.extractor.extract_supplier_name(text)
+
+        self.assertIsNone(result)

@@ -28,6 +28,11 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    SUPPLIER_NAME_PATTERN = re.compile(
+        r"^\s*(?:поставщик|продавец)\s*:\s*(.+?)\s*$",
+        re.IGNORECASE | re.MULTILINE,
+    )
+
     DOCUMENT_TYPE_PATTERN = re.compile(
         r"\b(сч[её]т|упд|накладная)\b",
         re.IGNORECASE,
@@ -108,6 +113,32 @@ class FieldExtractor:
             field_name="supplier_kpp",
             raw_value=kpp,
             normalized_value=kpp,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_supplier_name(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        if not text:
+            return None
+
+        match = self.SUPPLIER_NAME_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        raw_name = match.group(1).strip()
+        normalized_name = " ".join(raw_name.split())
+
+        if not normalized_name:
+            return None
+
+        return ExtractedField(
+            field_name="supplier_name",
+            raw_value=raw_name,
+            normalized_value=normalized_name,
             confidence=1.0,
             extraction_method="regex",
         )

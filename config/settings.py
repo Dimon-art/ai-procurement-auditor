@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.companies.apps.CompaniesConfig",
     "apps.users.apps.UsersConfig",
     "apps.documents.apps.DocumentsConfig",
+    "apps.rules.apps.RulesConfig",
     ]
 
 

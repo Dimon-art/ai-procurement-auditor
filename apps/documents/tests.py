@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 
 from apps.companies.models import Company
-from apps.documents.models import Document, OCRResult
+from apps.documents.models import Document, DocumentField, OCRResult
 from apps.documents.services.document_ocr import process_document_ocr
 from apps.documents.services.failing_ocr import FailingOCRService
 from apps.documents.services.mock_ocr import MockOCRService
@@ -266,6 +266,58 @@ class DocumentUploadViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Mock OCR text")
+
+    @patch(
+        "apps.documents.views.process_document_ocr"
+    )
+    @patch(
+        "apps.documents.views.get_ocr_service",
+        return_value=MockOCRService(),
+    )
+    def test_successful_upload_shows_extracted_fields(
+        self,
+        mock_get_ocr_service,
+        mock_process_document_ocr,
+    ):
+        def process_ocr(document, ocr_service):
+            OCRResult.objects.create(
+                document=document,
+                provider="mock",
+                raw_text="Recognized text",
+                confidence=1.0,
+            )
+
+            DocumentField.objects.create(
+                document=document,
+                field_name="supplier_inn",
+                raw_value="7704458262",
+                normalized_value="7704458262",
+                confidence=1.0,
+                extraction_method="regex",
+            )
+
+            document.status = Document.Status.OCR_COMPLETED
+            document.save(
+                update_fields=["status", "updated_at"]
+            )
+
+        mock_process_document_ocr.side_effect = process_ocr
+
+        response = self.client.post(
+            "/documents/upload/",
+            {
+                "company": self.company.id,
+                "document": SimpleUploadedFile(
+                    "fields_invoice.pdf",
+                    b"fake pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "supplier_inn")
+        self.assertContains(response, "7704458262")
 
     @patch(
         "apps.documents.views.get_ocr_service",

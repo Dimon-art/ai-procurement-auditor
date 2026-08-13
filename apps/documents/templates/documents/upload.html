@@ -2,9 +2,9 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Загрузка документа</title>
 </head>
-
 <body>
     <h1>Загрузка документа</h1>
 
@@ -18,6 +18,21 @@
             Статус:
             {{ uploaded_document.status }}
         </p>
+
+        {% if document_fields %}
+            <div>
+                <h2>Извлечённые поля</h2>
+
+                <ul>
+                    {% for field in document_fields %}
+                        <li>
+                            <strong>{{ field.field_name }}:</strong>
+                            {{ field.normalized_value }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
 
         {% if ocr_result %}
             {% if ocr_result.raw_text %}

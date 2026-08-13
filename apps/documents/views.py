@@ -43,6 +43,10 @@ def upload_document(request):
             "-created_at"
         ).first()
 
+        document_fields = document.fields.order_by(
+            "field_name"
+        )
+
         return render(
             request,
             "documents/upload.html",
@@ -50,6 +54,7 @@ def upload_document(request):
                 "companies": companies,
                 "uploaded_document": document,
                 "ocr_result": ocr_result,
+                "document_fields": document_fields,
             },
         )
 

@@ -37,6 +37,18 @@ class FieldExtractorTests(SimpleTestCase):
 
         self.assertIsNone(result)
 
+    def test_extract_document_number_ignores_word_raschetov(self):
+        text = """
+        ИНН
+        7704458262
+        Адрес расчётов
+        600902, Россия, Владимирская обл., г. Владимир
+        """
+
+        result = self.extractor.extract_document_number(text)
+
+        self.assertIsNone(result)
+
     def test_extract_supplier_kpp(self):
         text = """
         ООО "Тестовый поставщик"
@@ -133,6 +145,8 @@ class FieldExtractorTests(SimpleTestCase):
         self.assertEqual(result.normalized_value, "2026-08-10")
         self.assertEqual(result.confidence, 1.0)
         self.assertEqual(result.extraction_method, "regex")
+
+   
 
     def test_extract_document_date_with_date_label(self):
         text = """

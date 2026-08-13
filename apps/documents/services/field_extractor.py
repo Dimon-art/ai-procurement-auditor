@@ -39,11 +39,11 @@ class FieldExtractor:
     )
 
     DOCUMENT_NUMBER_PATTERN = re.compile(
-        r"(?:сч[её]т|упд|накладная|документ)"
+        r"\b(?:сч[её]т|упд|накладная|документ)\b"
         r"\s*(?:№|N|No\.?)?\s*"
         r"([A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9/_\-]*)",
         re.IGNORECASE,
-    )
+)
 
     DOCUMENT_DATE_PATTERN = re.compile(
         r"(?:от|дата)"

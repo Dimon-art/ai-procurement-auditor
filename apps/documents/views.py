@@ -3,6 +3,7 @@ from django.shortcuts import render
 from apps.companies.models import Company
 from apps.documents.models import Document
 from apps.documents.services.document_ocr import process_document_ocr
+from apps.documents.services.file_metadata import calculate_file_metadata
 from apps.documents.services.ocr_factory import get_ocr_service
 
 
@@ -25,6 +26,21 @@ def upload_document(request):
             company=company,
             original_file=uploaded_file,
             filename=uploaded_file.name,
+        )
+
+        metadata = calculate_file_metadata(
+            document.original_file.path
+        )
+
+        document.file_hash = metadata.file_hash
+        document.file_size = metadata.file_size
+
+        document.save(
+            update_fields=[
+                "file_hash",
+                "file_size",
+                "updated_at",
+            ]
         )
 
         ocr_service = get_ocr_service()

@@ -28,6 +28,15 @@ class Document(models.Model):
         max_length=255
     )
 
+    file_hash = models.CharField(
+        max_length=64,
+        blank=True,
+    )
+
+    file_size = models.PositiveBigIntegerField(
+        default=0,
+    )
+
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

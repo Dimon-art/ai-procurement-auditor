@@ -267,6 +267,20 @@ class DocumentUploadViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Mock OCR text")
 
+        document = Document.objects.get(
+            filename="success_invoice.pdf"
+        )
+
+        self.assertEqual(
+            document.file_size,
+            len(b"fake pdf content"),
+        )
+
+        self.assertEqual(
+            len(document.file_hash),
+            64,
+        )
+
     @patch(
         "apps.documents.views.process_document_ocr"
     )

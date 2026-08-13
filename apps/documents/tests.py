@@ -72,6 +72,21 @@ class DocumentOCRTests(TestCase):
             0,
         )
 
+    @patch(
+        "apps.documents.services.document_ocr."
+        "extract_and_save_document_fields"
+    )
+    def test_successful_ocr_extracts_document_fields(
+        self,
+        mock_extract_fields,
+    ):
+        result = process_document_ocr(
+            self.document,
+            MockOCRService(),
+        )
+
+        mock_extract_fields.assert_called_once_with(result)
+
     def test_failed_ocr_saves_error_and_updates_status(self):
         with self.assertRaises(RuntimeError):
             process_document_ocr(
@@ -221,6 +236,8 @@ class YandexOCRServiceTests(TestCase):
         )
 
         return path
+
+
 class DocumentUploadViewTests(TestCase):
     def setUp(self):
         self.company = Company.objects.create(

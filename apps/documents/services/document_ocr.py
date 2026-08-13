@@ -1,6 +1,9 @@
 import time
 
 from apps.documents.models import Document, OCRResult
+from apps.documents.services.document_fields import (
+    extract_and_save_document_fields,
+)
 from apps.documents.services.ocr import OCRService
 
 
@@ -9,7 +12,8 @@ def process_document_ocr(
     ocr_service: OCRService,
 ) -> OCRResult:
     """
-    Run OCR for a document and persist the result.
+    Run OCR for a document, persist the result,
+    and extract structured document fields.
     """
 
     document.status = Document.Status.OCR_PROCESSING
@@ -18,7 +22,9 @@ def process_document_ocr(
     started_at = time.perf_counter()
 
     try:
-        response = ocr_service.recognize(document.original_file.path)
+        response = ocr_service.recognize(
+            document.original_file.path
+        )
 
         processing_time_ms = int(
             (time.perf_counter() - started_at) * 1000
@@ -33,8 +39,14 @@ def process_document_ocr(
             processing_time_ms=processing_time_ms,
         )
 
+        extract_and_save_document_fields(
+            ocr_result,
+        )
+
         document.status = Document.Status.OCR_COMPLETED
-        document.save(update_fields=["status", "updated_at"])
+        document.save(
+            update_fields=["status", "updated_at"]
+        )
 
         return ocr_result
 
@@ -51,6 +63,8 @@ def process_document_ocr(
         )
 
         document.status = Document.Status.ERROR
-        document.save(update_fields=["status", "updated_at"])
+        document.save(
+            update_fields=["status", "updated_at"]
+        )
 
         raise

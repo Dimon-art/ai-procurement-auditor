@@ -7,6 +7,7 @@ def extract_and_save_document_fields(
 ) -> list[DocumentField]:
     """
     Extract structured fields from OCR text and persist them.
+    Remove stale fields that are no longer extracted.
     """
 
     extractor = FieldExtractor()
@@ -24,6 +25,7 @@ def extract_and_save_document_fields(
     ]
 
     saved_fields = []
+    extracted_field_names = set()
 
     for extraction_method in extraction_methods:
         extracted_field = extraction_method(
@@ -32,6 +34,10 @@ def extract_and_save_document_fields(
 
         if extracted_field is None:
             continue
+
+        extracted_field_names.add(
+            extracted_field.field_name
+        )
 
         document_field, _ = DocumentField.objects.update_or_create(
             document=ocr_result.document,
@@ -45,5 +51,11 @@ def extract_and_save_document_fields(
         )
 
         saved_fields.append(document_field)
+
+    DocumentField.objects.filter(
+        document=ocr_result.document,
+    ).exclude(
+        field_name__in=extracted_field_names,
+    ).delete()
 
     return saved_fields

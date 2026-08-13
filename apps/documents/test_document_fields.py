@@ -24,6 +24,36 @@ class DocumentFieldsServiceTests(TestCase):
             filename="invoice_test.pdf",
         )
 
+    def test_extract_and_save_document_fields_removes_stale_fields(self):
+        DocumentField.objects.create(
+            document=self.document,
+            field_name="document_number",
+            raw_value="ов",
+            normalized_value="ов",
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+        ocr_result = OCRResult.objects.create(
+            document=self.document,
+            provider="mock",
+            raw_text="""
+            ИНН 7704458262
+            НДС 22/122% 90.16
+            """,
+        )
+
+        extract_and_save_document_fields(
+            ocr_result,
+        )
+
+        self.assertFalse(
+            DocumentField.objects.filter(
+                document=self.document,
+                field_name="document_number",
+            ).exists()
+        )
+
     def test_extract_and_save_document_fields(self):
         ocr_result = OCRResult.objects.create(
             document=self.document,

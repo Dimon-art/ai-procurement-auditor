@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.companies.apps.CompaniesConfig",
+    "apps.suppliers.apps.SuppliersConfig",
     "apps.users.apps.UsersConfig",
     "apps.documents.apps.DocumentsConfig",
     "apps.rules.apps.RulesConfig",

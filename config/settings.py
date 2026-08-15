@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "apps.companies.apps.CompaniesConfig",
     "apps.suppliers.apps.SuppliersConfig",
     "apps.users.apps.UsersConfig",
@@ -49,6 +50,11 @@ INSTALLED_APPS = [
     "apps.rules.apps.RulesConfig",
     ]
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

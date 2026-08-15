@@ -83,3 +83,26 @@ class SaveRuleResultTests(TestCase):
                 "missing_fields": ["vat_amount"],
             },
         )
+    
+    def test_passed_rule_result_has_zero_score(self):
+        rule_result = RuleResult(
+            rule_id="R008",
+            rule_name="Amount Validation",
+            status="passed",
+            severity="high",
+            weight=30,
+            message="Total amount is valid.",
+            details={
+                "total_amount": "1000.00",
+            },
+        )
+
+        check_result = save_rule_result(
+            self.document,
+            rule_result,
+        )
+
+        self.assertEqual(
+            check_result.score,
+            0,
+        )

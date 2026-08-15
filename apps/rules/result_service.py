@@ -16,7 +16,11 @@ def save_rule_result(
         rule_id=result.rule_id,
         status=result.status,
         severity=result.severity,
-        score=result.weight,
+        score=(
+            result.weight
+            if result.status == "failed"
+            else 0
+        ),
         explanation=result.message,
         evidence=result.details,
     )

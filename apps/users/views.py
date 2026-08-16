@@ -21,4 +21,22 @@ class CurrentUserProfileView(APIView):
             }
         )
 
-# Create your views here.
+    def patch(self, request):
+        profile = request.user.profile
+        serializer = UserProfileSerializer(
+            profile,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+                "message": None,
+                "errors": [],
+            }
+        )

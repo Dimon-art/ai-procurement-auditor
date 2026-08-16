@@ -6,6 +6,7 @@ from rest_framework.test import APIClient, APITestCase
 
 from apps.companies.models import Company
 from apps.users.models import UserProfile
+from apps.users.serializers import UserProfileSerializer
 
 
 class JWTAuthenticationTests(APITestCase):
@@ -81,6 +82,10 @@ class CurrentUserProfileAPITests(APITestCase):
             name="Тестовая компания",
         )
 
+        self.other_company = Company.objects.create(
+            name="Другая компания",
+        )
+
         self.profile = UserProfile.objects.create(
             user=self.user,
             company=self.company,
@@ -89,17 +94,7 @@ class CurrentUserProfileAPITests(APITestCase):
             status=UserProfile.Status.ACTIVE,
         )
 
-    def test_current_user_profile_requires_authentication(self):
-        response = self.client.get(
-            reverse("current-user-profile"),
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_401_UNAUTHORIZED,
-        )
-
-    def test_current_user_profile_returns_b2b_profile(self):
+    def authenticate(self):
         login_response = self.client.post(
             reverse("token_obtain_pair"),
             {
@@ -117,6 +112,19 @@ class CurrentUserProfileAPITests(APITestCase):
         self.client.credentials(
             HTTP_AUTHORIZATION=f"Bearer {login_response.data['access']}",
         )
+
+    def test_current_user_profile_requires_authentication(self):
+        response = self.client.get(
+            reverse("current-user-profile"),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_current_user_profile_returns_b2b_profile(self):
+        self.authenticate()
 
         response = self.client.get(
             reverse("current-user-profile"),
@@ -143,3 +151,139 @@ class CurrentUserProfileAPITests(APITestCase):
             },
         )
 
+    def test_current_user_profile_patch_updates_full_name(self):
+        self.authenticate()
+
+        response = self.client.patch(
+            reverse("current-user-profile"),
+            {
+                "full_name": "Новое имя пользователя",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertTrue(response.data["success"])
+        self.assertEqual(
+            response.data["data"]["full_name"],
+            "Новое имя пользователя",
+        )
+
+        self.profile.refresh_from_db()
+
+        self.assertEqual(
+            self.profile.full_name,
+            "Новое имя пользователя",
+        )
+
+    def test_current_user_profile_patch_cannot_change_role(self):
+        self.authenticate()
+
+        response = self.client.patch(
+            reverse("current-user-profile"),
+            {
+                "role": UserProfile.Role.COMPANY_ADMIN,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.profile.refresh_from_db()
+
+        self.assertEqual(
+            self.profile.role,
+            UserProfile.Role.ACCOUNTANT,
+        )
+
+    def test_current_user_profile_patch_cannot_change_status(self):
+        self.authenticate()
+
+        response = self.client.patch(
+            reverse("current-user-profile"),
+            {
+                "status": UserProfile.Status.INACTIVE,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.profile.refresh_from_db()
+
+        self.assertEqual(
+            self.profile.status,
+            UserProfile.Status.ACTIVE,
+        )
+
+    def test_current_user_profile_patch_cannot_change_company(self):
+        self.authenticate()
+
+        response = self.client.patch(
+            reverse("current-user-profile"),
+            {
+                "company_id": self.other_company.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.profile.refresh_from_db()
+
+        self.assertEqual(
+            self.profile.company_id,
+            self.company.id,
+        )
+
+
+class UserProfileSerializerSecurityTests(APITestCase):
+    def test_full_name_is_writable(self):
+        serializer = UserProfileSerializer()
+
+        self.assertFalse(
+            serializer.fields["full_name"].read_only,
+        )
+
+    def test_role_is_read_only(self):
+        serializer = UserProfileSerializer()
+
+        self.assertTrue(
+            serializer.fields["role"].read_only,
+        )
+
+    def test_status_is_read_only(self):
+        serializer = UserProfileSerializer()
+
+        self.assertTrue(
+            serializer.fields["status"].read_only,
+        )
+
+    def test_company_fields_are_read_only(self):
+        serializer = UserProfileSerializer()
+
+        self.assertTrue(
+            serializer.fields["company_id"].read_only,
+        )
+        self.assertTrue(
+            serializer.fields["company_name"].read_only,
+        )
+
+    def test_email_is_read_only(self):
+        serializer = UserProfileSerializer()
+
+        self.assertTrue(
+            serializer.fields["email"].read_only,
+        )

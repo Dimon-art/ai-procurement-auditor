@@ -6,6 +6,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.documents.views import upload_document
+from apps.users.views import CurrentUserProfileView
 
 
 urlpatterns = [
@@ -20,6 +21,11 @@ urlpatterns = [
         "api/v1/auth/refresh/",
         TokenRefreshView.as_view(),
         name="token_refresh",
+    ),
+    path(
+        "api/v1/users/me/",
+        CurrentUserProfileView.as_view(),
+        name="current-user-profile",
     ),
 ]
 

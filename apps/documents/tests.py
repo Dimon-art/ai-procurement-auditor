@@ -3,8 +3,13 @@ from tempfile import gettempdir
 from unittest.mock import Mock, patch
 
 import requests
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.urls import reverse
+
+from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
 from apps.companies.models import Company
 from apps.documents.models import Document, DocumentField, OCRResult
@@ -13,6 +18,7 @@ from apps.documents.services.failing_ocr import FailingOCRService
 from apps.documents.services.mock_ocr import MockOCRService
 from apps.documents.services.ocr_factory import get_ocr_service
 from apps.documents.services.yandex_ocr import YandexOCRService
+from apps.users.models import UserProfile
 
 
 class DocumentOCRTests(TestCase):
@@ -362,4 +368,146 @@ class DocumentUploadViewTests(TestCase):
         self.assertEqual(
             document.status,
             Document.Status.ERROR,
+        )
+
+
+class DocumentListAPITests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="documentapi",
+            password="StrongTestPassword123!",
+        )
+
+        self.company = Company.objects.create(
+            name="Document API Company",
+        )
+
+        self.other_company = Company.objects.create(
+            name="Other Company",
+        )
+
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Document API User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        self.document = Document.objects.create(
+            company=self.company,
+            original_file=SimpleUploadedFile(
+                "my_invoice.pdf",
+                b"fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="my_invoice.pdf",
+            file_size=len(b"fake pdf content"),
+        )
+
+        self.other_document = Document.objects.create(
+            company=self.other_company,
+            original_file=SimpleUploadedFile(
+                "other_invoice.pdf",
+                b"other pdf content",
+                content_type="application/pdf",
+            ),
+            filename="other_invoice.pdf",
+            file_size=len(b"other pdf content"),
+        )
+
+    def authenticate(self):
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "username": "documentapi",
+                "password": "StrongTestPassword123!",
+            },
+            format="json",
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}",
+        )
+
+    def test_document_list_requires_authentication(self):
+        response = self.client.get(
+            reverse("document-list"),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_document_list_returns_only_current_company_documents(self):
+        self.authenticate()
+
+        response = self.client.get(
+            reverse("document-list"),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertTrue(response.data["success"])
+        self.assertIsNone(response.data["message"])
+        self.assertEqual(
+            response.data["errors"],
+            [],
+        )
+
+        self.assertEqual(
+            len(response.data["data"]),
+            1,
+        )
+
+        self.assertEqual(
+            response.data["data"][0]["id"],
+            self.document.id,
+        )
+
+        self.assertNotEqual(
+            response.data["data"][0]["id"],
+            self.other_document.id,
+        )
+
+    def test_document_upload_creates_document_for_current_company(
+        self,
+    ):
+        self.authenticate()
+
+        response = self.client.post(
+            reverse("document-list"),
+            {
+                "original_file": SimpleUploadedFile(
+                    "uploaded_invoice.pdf",
+                    b"uploaded pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertTrue(
+            response.data["success"],
+        )
+
+        document = Document.objects.get(
+            filename="uploaded_invoice.pdf",
+        )
+
+        self.assertEqual(
+            document.company_id,
+            self.company.id,
         )

@@ -6,7 +6,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.companies.views import CompanyListView
-from apps.documents.views import upload_document
+from apps.documents.views import DocumentListView, upload_document
 from apps.users.views import CurrentUserProfileView
 
 
@@ -22,6 +22,11 @@ urlpatterns = [
         "api/v1/companies/",
         CompanyListView.as_view(),
         name="company-list",
+    ),
+    path(
+        "api/v1/documents/",
+        DocumentListView.as_view(),
+        name="document-list",
     ),
     path(
         "api/v1/auth/refresh/",

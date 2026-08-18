@@ -477,37 +477,463 @@ class DocumentListAPITests(APITestCase):
             self.other_document.id,
         )
 
-    def test_document_upload_creates_document_for_current_company(
-        self,
-    ):
+class DocumentStatusAPITests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="documentstatus",
+            password="StrongTestPassword123!",
+        )
+
+        self.company = Company.objects.create(
+            name="Document Status Company",
+        )
+
+        self.other_company = Company.objects.create(
+            name="Other Document Status Company",
+        )
+
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Document Status User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        self.document = Document.objects.create(
+            company=self.company,
+            original_file=SimpleUploadedFile(
+                "status_invoice.pdf",
+                b"fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="status_invoice.pdf",
+            file_size=len(b"fake pdf content"),
+            status=Document.Status.OCR_PROCESSING,
+        )
+
+        self.other_document = Document.objects.create(
+            company=self.other_company,
+            original_file=SimpleUploadedFile(
+                "other_status_invoice.pdf",
+                b"other fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="other_status_invoice.pdf",
+            file_size=len(b"other fake pdf content"),
+            status=Document.Status.VERIFIED,
+        )
+
+    def authenticate(self):
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "username": "documentstatus",
+                "password": "StrongTestPassword123!",
+            },
+            format="json",
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}",
+        )
+
+    def test_document_status_returns_current_status(self):
         self.authenticate()
 
-        response = self.client.post(
-            reverse("document-list"),
-            {
-                "original_file": SimpleUploadedFile(
-                    "uploaded_invoice.pdf",
-                    b"uploaded pdf content",
-                    content_type="application/pdf",
-                ),
-            },
-            format="multipart",
+        response = self.client.get(
+            reverse(
+                "document-status",
+                kwargs={"pk": self.document.pk},
+            ),
         )
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_201_CREATED,
+            status.HTTP_200_OK,
         )
 
         self.assertTrue(
             response.data["success"],
         )
 
-        document = Document.objects.get(
-            filename="uploaded_invoice.pdf",
+        self.assertEqual(
+            response.data["data"]["status"],
+            Document.Status.OCR_PROCESSING,
+        )
+
+    def test_document_status_requires_authentication(self):
+        response = self.client.get(
+            reverse(
+                "document-status",
+                kwargs={"pk": self.document.pk},
+            ),
         )
 
         self.assertEqual(
-            document.company_id,
-            self.company.id,
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_document_status_does_not_return_other_company_document(self):
+        self.authenticate()
+
+        response = self.client.get(
+            reverse(
+                "document-status",
+                kwargs={"pk": self.other_document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+        self.assertIsNone(
+            response.data["data"],
+        )
+
+    def test_document_status_returns_404_for_nonexistent_document(self):
+        self.authenticate()
+
+        nonexistent_pk = max(
+            self.document.pk,
+            self.other_document.pk,
+        ) + 1000
+
+        response = self.client.get(
+            reverse(
+                "document-status",
+                kwargs={"pk": nonexistent_pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+        self.assertIsNone(
+            response.data["data"],
+        )
+
+class DocumentRecheckAPITests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="documentrecheck",
+            password="StrongTestPassword123!",
+        )
+
+        self.company = Company.objects.create(
+            name="Document Recheck Company",
+        )
+
+        self.other_company = Company.objects.create(
+            name="Other Document Recheck Company",
+        )
+
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Document Recheck User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        self.document = Document.objects.create(
+            company=self.company,
+            original_file=SimpleUploadedFile(
+                "recheck_invoice.pdf",
+                b"fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="recheck_invoice.pdf",
+            file_size=len(b"fake pdf content"),
+            status=Document.Status.OCR_COMPLETED,
+        )
+
+        self.other_document = Document.objects.create(
+            company=self.other_company,
+            original_file=SimpleUploadedFile(
+                "other_recheck_invoice.pdf",
+                b"other fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="other_recheck_invoice.pdf",
+            file_size=len(b"other fake pdf content"),
+            status=Document.Status.OCR_COMPLETED,
+        )
+
+    def authenticate(self):
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "username": "documentrecheck",
+                "password": "StrongTestPassword123!",
+            },
+            format="json",
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}",
+        )
+
+    def test_document_recheck_runs_rule_engine(self):
+        self.authenticate()
+
+        response = self.client.post(
+            reverse(
+                "document-recheck",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertTrue(
+            response.data["success"],
+        )
+
+    def test_document_recheck_requires_authentication(self):
+        response = self.client.post(
+            reverse(
+                "document-recheck",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_document_recheck_does_not_recheck_other_company_document(self):
+        self.authenticate()
+
+        response = self.client.post(
+            reverse(
+                "document-recheck",
+                kwargs={"pk": self.other_document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+        self.assertIsNone(
+            response.data["data"],
+        )
+
+    def test_document_recheck_returns_404_for_nonexistent_document(self):
+        self.authenticate()
+
+        nonexistent_pk = max(
+            self.document.pk,
+            self.other_document.pk,
+        ) + 1000
+
+        response = self.client.post(
+            reverse(
+                "document-recheck",
+                kwargs={"pk": nonexistent_pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+        self.assertIsNone(
+            response.data["data"],
+        )
+
+class DocumentReportAPITests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="documentreport",
+            password="StrongTestPassword123!",
+        )
+
+        self.company = Company.objects.create(
+            name="Document Report Company",
+        )
+
+        self.other_company = Company.objects.create(
+            name="Other Document Report Company",
+        )
+
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Document Report User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        self.document = Document.objects.create(
+            company=self.company,
+            original_file=SimpleUploadedFile(
+                "report_invoice.pdf",
+                b"fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="report_invoice.pdf",
+            file_size=len(b"fake pdf content"),
+            status=Document.Status.OCR_COMPLETED,
+        )
+
+        self.other_document = Document.objects.create(
+            company=self.other_company,
+            original_file=SimpleUploadedFile(
+                "other_report_invoice.pdf",
+                b"other fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="other_report_invoice.pdf",
+            file_size=len(b"other fake pdf content"),
+            status=Document.Status.OCR_COMPLETED,
+        )
+
+    def authenticate(self):
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "username": "documentreport",
+                "password": "StrongTestPassword123!",
+            },
+            format="json",
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}",
+        )
+
+    def test_document_report_returns_report(self):
+        self.authenticate()
+
+        response = self.client.get(
+            reverse(
+                "document-report",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertTrue(
+            response.data["success"],
+        )
+
+        self.assertIn(
+            "risk_score",
+            response.data["data"],
+        )
+
+        self.assertIn(
+            "decision",
+            response.data["data"],
+        )
+
+        self.assertIn(
+            "results",
+            response.data["data"],
+        )
+
+    def test_document_report_requires_authentication(self):
+        response = self.client.get(
+            reverse(
+                "document-report",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_document_report_does_not_return_other_company_document(self):
+        self.authenticate()
+
+        response = self.client.get(
+            reverse(
+                "document-report",
+                kwargs={"pk": self.other_document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+        self.assertIsNone(
+            response.data["data"],
+        )
+
+    def test_document_report_returns_404_for_nonexistent_document(self):
+        self.authenticate()
+
+        nonexistent_pk = max(
+            self.document.pk,
+            self.other_document.pk,
+        ) + 1000
+
+        response = self.client.get(
+            reverse(
+                "document-report",
+                kwargs={"pk": nonexistent_pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+        self.assertIsNone(
+            response.data["data"],
         )

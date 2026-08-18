@@ -6,13 +6,24 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.companies.views import CompanyListView
-from apps.documents.views import DocumentListView, upload_document
+from apps.documents.views import (
+    DocumentDetailView,
+    DocumentListView,
+    DocumentRecheckView,
+    DocumentReportView,
+    DocumentStatusView,
+    upload_document,
+)
 from apps.users.views import CurrentUserProfileView
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("documents/upload/", upload_document, name="document-upload"),
+    path(
+        "documents/upload/",
+        upload_document,
+        name="document-upload",
+    ),
     path(
         "api/v1/auth/login/",
         TokenObtainPairView.as_view(),
@@ -27,6 +38,26 @@ urlpatterns = [
         "api/v1/documents/",
         DocumentListView.as_view(),
         name="document-list",
+    ),
+    path(
+        "api/v1/documents/<int:pk>/",
+        DocumentDetailView.as_view(),
+        name="document-detail",
+    ),
+    path(
+        "api/v1/documents/<int:pk>/status/",
+        DocumentStatusView.as_view(),
+        name="document-status",
+    ),
+    path(
+        "api/v1/documents/<int:pk>/recheck/",
+        DocumentRecheckView.as_view(),
+        name="document-recheck",
+    ),
+    path(
+        "api/v1/documents/<int:pk>/report/",
+        DocumentReportView.as_view(),
+        name="document-report",
     ),
     path(
         "api/v1/auth/refresh/",

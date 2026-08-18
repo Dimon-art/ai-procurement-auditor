@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.audit.service import create_audit_log
 from apps.companies.models import Company
 from apps.documents.models import Document
 from apps.documents.serializers import (
@@ -257,6 +258,22 @@ class DocumentRecheckView(APIView):
 
         report = run_rule_engine(
             document,
+        )
+
+        create_audit_log(
+            company=company,
+            user=request.user,
+            document=document,
+            action="document.recheck",
+            entity_type="document",
+            entity_id=str(document.pk),
+            new_value={
+                "risk_score": report.risk_score,
+                "decision": report.decision,
+            },
+            metadata={
+                "source": "api",
+            },
         )
 
         return Response(

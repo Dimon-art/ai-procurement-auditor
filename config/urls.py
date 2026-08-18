@@ -5,6 +5,7 @@ from django.urls import path
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from apps.audit.views import AuditLogDetailView, AuditLogListView
 from apps.companies.views import CompanyListView
 from apps.documents.views import (
     DocumentDetailView,
@@ -64,6 +65,16 @@ urlpatterns = [
         "api/v1/documents/<int:pk>/report/",
         DocumentReportView.as_view(),
         name="document-report",
+    ),
+    path(
+        "api/v1/audit/",
+        AuditLogListView.as_view(),
+        name="audit-log-list",
+    ),
+    path(
+        "api/v1/audit/<int:pk>/",
+        AuditLogDetailView.as_view(),
+        name="audit-log-detail",
     ),
     path(
         "api/v1/auth/refresh/",

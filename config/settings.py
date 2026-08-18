@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "apps.users.apps.UsersConfig",
     "apps.documents.apps.DocumentsConfig",
     "apps.rules.apps.RulesConfig",
+    "apps.audit.apps.AuditConfig",
     ]
 
 REST_FRAMEWORK = {

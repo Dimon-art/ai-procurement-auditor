@@ -11,6 +11,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
+from apps.audit.models import AuditLog
 from apps.companies.models import Company
 from apps.documents.models import Document, DocumentField, OCRResult
 from apps.documents.services.document_ocr import process_document_ocr
@@ -774,6 +775,59 @@ class DocumentRecheckAPITests(APITestCase):
 
         self.assertIsNone(
             response.data["data"],
+        )
+
+    def test_document_recheck_creates_audit_log(self):
+        self.authenticate()
+
+        response = self.client.post(
+            reverse(
+                "document-recheck",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        audit_log = AuditLog.objects.get(
+            company=self.company,
+            document=self.document,
+            action="document.recheck",
+        )
+
+        self.assertEqual(
+            audit_log.user,
+            self.user,
+        )
+
+        self.assertEqual(
+            audit_log.entity_type,
+            "document",
+        )
+
+        self.assertEqual(
+            audit_log.entity_id,
+            str(self.document.pk),
+        )
+
+        self.assertEqual(
+            audit_log.metadata,
+            {
+                "source": "api",
+            },
+        )
+
+        self.assertEqual(
+            audit_log.new_value["risk_score"],
+            response.data["data"]["risk_score"],
+        )
+
+        self.assertEqual(
+            audit_log.new_value["decision"],
+            response.data["data"]["decision"],
         )
 
 class DocumentReportAPITests(APITestCase):

@@ -1403,3 +1403,169 @@ class DocumentListPageUITests(APITestCase):
             response,
             "documents/list.html",
         )
+
+class DocumentDetailPageUITests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="documentdetailui",
+            password="StrongTestPassword123!",
+        )
+
+        self.company = Company.objects.create(
+            name="Document Detail UI Company",
+        )
+
+        self.other_company = Company.objects.create(
+            name="Other Document Detail UI Company",
+        )
+
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Document Detail UI User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        self.document = Document.objects.create(
+            company=self.company,
+            original_file=SimpleUploadedFile(
+                "detail_invoice.pdf",
+                b"fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="detail_invoice.pdf",
+            file_size=len(b"fake pdf content"),
+            status=Document.Status.OCR_COMPLETED,
+        )
+
+        self.other_document = Document.objects.create(
+            company=self.other_company,
+            original_file=SimpleUploadedFile(
+                "other_detail_invoice.pdf",
+                b"other fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="other_detail_invoice.pdf",
+            file_size=len(b"other fake pdf content"),
+            status=Document.Status.OCR_COMPLETED,
+        )
+
+    def test_document_detail_page_requires_authentication(self):
+        response = self.client.get(
+            reverse(
+                "document-detail-page",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_302_FOUND,
+        )
+
+        self.assertIn(
+            reverse("login"),
+            response.url,
+        )
+
+    def test_document_detail_page_returns_current_company_document(self):
+        self.client.force_login(
+            self.user,
+        )
+
+        response = self.client.get(
+            reverse(
+                "document-detail-page",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertContains(
+            response,
+            "detail_invoice.pdf",
+        )
+
+    def test_document_detail_page_does_not_access_other_company_document(self):
+        self.client.force_login(
+            self.user,
+        )
+
+        response = self.client.get(
+            reverse(
+                "document-detail-page",
+                kwargs={"pk": self.other_document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_document_detail_page_uses_expected_template(self):
+        self.client.force_login(
+            self.user,
+        )
+
+        response = self.client.get(
+            reverse(
+                "document-detail-page",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertTemplateUsed(
+            response,
+            "documents/detail.html",
+        )
+
+    def test_document_detail_page_contains_report_context(self):
+        self.client.force_login(
+            self.user,
+        )
+
+        response = self.client.get(
+            reverse(
+                "document-detail-page",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertIn(
+            "document_fields",
+            response.context,
+        )
+
+        self.assertIn(
+            "ocr_result",
+            response.context,
+        )
+
+        self.assertIn(
+            "check_results",
+            response.context,
+        )
+
+        self.assertIn(
+            "risk_score",
+            response.context,
+        )
+
+        self.assertIn(
+            "decision",
+            response.context,
+        )

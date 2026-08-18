@@ -23,8 +23,10 @@
         <ul>
             {% for document in documents %}
                 <li>
-                    <strong>{{ document.filename }}</strong>
-                    — {{ document.status }}
+                    <a href="{% url 'document-detail-page' document.pk %}">
+                        <strong>{{ document.filename }}</strong>
+                    </a>
+                    — {{ document.get_status_display }}
                 </li>
             {% endfor %}
         </ul>

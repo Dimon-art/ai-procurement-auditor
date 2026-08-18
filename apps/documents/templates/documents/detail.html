@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document.filename }} - AI Procurement Auditor</title>
+</head>
+<body>
+    <p>
+        <a href="{% url 'document-list-page' %}">
+            Back to documents
+        </a>
+    </p>
+
+    <h1>{{ document.filename }}</h1>
+
+    <section>
+        <h2>Document</h2>
+
+        <p>
+            <strong>Status:</strong>
+            {{ document.get_status_display }}
+        </p>
+
+        <p>
+            <strong>File size:</strong>
+            {{ document.file_size }} bytes
+        </p>
+
+        <p>
+            <strong>Uploaded:</strong>
+            {{ document.created_at }}
+        </p>
+    </section>
+
+    <section>
+        <h2>Risk report</h2>
+
+        <p>
+            <strong>Risk score:</strong>
+            {{ risk_score }}
+        </p>
+
+        <p>
+            <strong>Decision:</strong>
+            {{ decision }}
+        </p>
+    </section>
+
+    <section>
+        <h2>Extracted fields</h2>
+
+        {% if document_fields %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for field in document_fields %}
+                        <tr>
+                            <td>{{ field.field_name }}</td>
+                            <td>
+                                {% if field.is_manually_corrected %}
+                                    {{ field.corrected_value }}
+                                {% else %}
+                                    {{ field.normalized_value }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if field.confidence is not None %}
+                                    {{ field.confidence }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No extracted fields.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Checks</h2>
+
+        {% if check_results %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rule</th>
+                        <th>Status</th>
+                        <th>Severity</th>
+                        <th>Score</th>
+                        <th>Explanation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in check_results %}
+                        <tr>
+                            <td>{{ result.rule_id }}</td>
+                            <td>{{ result.get_status_display }}</td>
+                            <td>{{ result.severity }}</td>
+                            <td>{{ result.score }}</td>
+                            <td>{{ result.explanation }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No checks available.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>OCR</h2>
+
+        {% if ocr_result %}
+            <p>
+                <strong>Provider:</strong>
+                {{ ocr_result.provider }}
+            </p>
+
+            {% if ocr_result.confidence is not None %}
+                <p>
+                    <strong>Confidence:</strong>
+                    {{ ocr_result.confidence }}
+                </p>
+            {% endif %}
+
+            {% if ocr_result.processing_time_ms is not None %}
+                <p>
+                    <strong>Processing time:</strong>
+                    {{ ocr_result.processing_time_ms }} ms
+                </p>
+            {% endif %}
+
+            {% if ocr_result.raw_text %}
+                <h3>Recognized text</h3>
+                <pre>{{ ocr_result.raw_text }}</pre>
+            {% endif %}
+
+            {% if ocr_result.error_message %}
+                <h3>OCR error</h3>
+                <p>{{ ocr_result.error_message }}</p>
+            {% endif %}
+        {% else %}
+            <p>No OCR result.</p>
+        {% endif %}
+    </section>
+</body>
+</html>

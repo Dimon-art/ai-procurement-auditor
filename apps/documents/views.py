@@ -25,7 +25,7 @@ from apps.rules.service import run_rule_engine
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.utils import timezone
-from django.views.generic import ListView
+from django.views.generic import  DetailView, ListView
 
 def upload_document(request):
     """
@@ -580,3 +580,41 @@ class DocumentListPageView(LoginRequiredMixin, ListView):
         return Document.objects.filter(
             company=self.request.user.profile.company,
         ).order_by("-created_at")
+
+class DocumentDetailPageView(LoginRequiredMixin, DetailView):
+    model = Document
+    template_name = "documents/detail.html"
+    context_object_name = "document"
+
+    def get_queryset(self):
+        return Document.objects.filter(
+            company=self.request.user.profile.company,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        document = self.object
+
+        context["document_fields"] = document.fields.order_by(
+            "field_name",
+        )
+
+        context["ocr_result"] = document.ocr_results.order_by(
+            "-created_at",
+        ).first()
+
+        context["check_results"] = document.check_results.order_by(
+            "rule_id",
+            "created_at",
+        )
+
+        context["risk_score"] = calculate_risk_score(
+            document,
+        )
+
+        context["decision"] = determine_document_decision(
+            context["risk_score"],
+        )
+
+        return context

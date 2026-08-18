@@ -9,6 +9,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.audit.views import AuditLogDetailView, AuditLogListView
 from apps.companies.views import CompanyListView
 from apps.documents.views import (
+    DocumentDetailPageView,
     DocumentDetailView,
     DocumentListPageView,
     DocumentListView,
@@ -26,7 +27,10 @@ from apps.users.views import CurrentUserProfileView
 
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path(
+        "admin/",
+        admin.site.urls,
+    ),
     path(
         "login/",
         LoginView.as_view(
@@ -48,6 +52,11 @@ urlpatterns = [
         "documents/upload/",
         upload_document,
         name="document-upload",
+    ),
+    path(
+        "documents/<int:pk>/",
+        DocumentDetailPageView.as_view(),
+        name="document-detail-page",
     ),
     path(
         "api/v1/auth/login/",

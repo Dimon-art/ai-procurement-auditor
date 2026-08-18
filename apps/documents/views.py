@@ -22,6 +22,11 @@ from apps.rules.risk_score import calculate_risk_score
 from apps.rules.service import run_rule_engine
 
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import render
+from django.utils import timezone
+from django.views.generic import ListView
+
 def upload_document(request):
     """
     Upload document and run OCR.
@@ -565,3 +570,13 @@ class PipelineRestartView(APIView):
             request,
             document,
         )
+
+class DocumentListPageView(LoginRequiredMixin, ListView):
+    model = Document
+    template_name = "documents/list.html"
+    context_object_name = "documents"
+
+    def get_queryset(self):
+        return Document.objects.filter(
+            company=self.request.user.profile.company,
+        ).order_by("-created_at")

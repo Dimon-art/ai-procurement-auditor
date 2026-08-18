@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import path
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -9,6 +10,7 @@ from apps.audit.views import AuditLogDetailView, AuditLogListView
 from apps.companies.views import CompanyListView
 from apps.documents.views import (
     DocumentDetailView,
+    DocumentListPageView,
     DocumentListView,
     DocumentRecheckView,
     DocumentReportView,
@@ -25,6 +27,23 @@ from apps.users.views import CurrentUserProfileView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path(
+        "login/",
+        LoginView.as_view(
+            template_name="registration/login.html",
+        ),
+        name="login",
+    ),
+    path(
+        "logout/",
+        LogoutView.as_view(),
+        name="logout",
+    ),
+    path(
+        "documents/",
+        DocumentListPageView.as_view(),
+        name="document-list-page",
+    ),
     path(
         "documents/upload/",
         upload_document,

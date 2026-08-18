@@ -277,6 +277,7 @@ class UserProfileSerializerSecurityTests(APITestCase):
         self.assertTrue(
             serializer.fields["company_id"].read_only,
         )
+
         self.assertTrue(
             serializer.fields["company_name"].read_only,
         )
@@ -286,4 +287,59 @@ class UserProfileSerializerSecurityTests(APITestCase):
 
         self.assertTrue(
             serializer.fields["email"].read_only,
+        )
+
+
+class LoginUITests(APITestCase):
+    def test_login_page_returns_200(self):
+        response = self.client.get(
+            reverse("login"),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertContains(
+            response,
+            "AI Procurement Auditor",
+        )
+
+        self.assertContains(
+            response,
+            "Вход",
+        )
+
+    def test_login_redirects_to_document_list(self):
+        user_model = get_user_model()
+
+        user = user_model.objects.create_user(
+            username="uilogin",
+            password="StrongTestPassword123!",
+        )
+
+        company = Company.objects.create(
+            name="UI Login Company",
+        )
+
+        UserProfile.objects.create(
+            user=user,
+            company=company,
+            full_name="UI Login User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "uilogin",
+                "password": "StrongTestPassword123!",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("document-list-page"),
         )

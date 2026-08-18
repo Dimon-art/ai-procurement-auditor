@@ -14,6 +14,7 @@ from apps.documents.views import (
     DocumentStatusView,
     upload_document,
 )
+from apps.suppliers.views import SupplierListView
 from apps.users.views import CurrentUserProfileView
 
 
@@ -33,6 +34,11 @@ urlpatterns = [
         "api/v1/companies/",
         CompanyListView.as_view(),
         name="company-list",
+    ),
+    path(
+        "api/v1/suppliers/",
+        SupplierListView.as_view(),
+        name="supplier-list",
     ),
     path(
         "api/v1/documents/",

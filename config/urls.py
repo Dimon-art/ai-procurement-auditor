@@ -71,6 +71,11 @@ urlpatterns = [
         name="document-report",
     ),
     path(
+        "api/v1/reports/<int:pk>/",
+        DocumentReportView.as_view(),
+        name="report-detail",
+    ),
+    path(
         "api/v1/pipeline/<int:document_id>/start/",
         PipelineStartView.as_view(),
         name="pipeline-start",

@@ -992,6 +992,40 @@ class DocumentReportAPITests(APITestCase):
             response.data["data"],
         )
 
+    def test_report_detail_alias_returns_report(self):
+        self.authenticate()
+
+        response = self.client.get(
+            reverse(
+                "report-detail",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertTrue(
+            response.data["success"],
+        )
+
+        self.assertIn(
+            "risk_score",
+            response.data["data"],
+        )
+
+        self.assertIn(
+            "decision",
+            response.data["data"],
+        )
+
+        self.assertIn(
+            "results",
+            response.data["data"],
+        )
+
 class PipelineAPITests(APITestCase):
     def setUp(self):
         self.client = APIClient()

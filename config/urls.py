@@ -13,6 +13,10 @@ from apps.documents.views import (
     DocumentRecheckView,
     DocumentReportView,
     DocumentStatusView,
+    PipelineHistoryView,
+    PipelineRestartView,
+    PipelineStartView,
+    PipelineStatusView,
     upload_document,
 )
 from apps.suppliers.views import SupplierListView
@@ -65,6 +69,26 @@ urlpatterns = [
         "api/v1/documents/<int:pk>/report/",
         DocumentReportView.as_view(),
         name="document-report",
+    ),
+    path(
+        "api/v1/pipeline/<int:document_id>/start/",
+        PipelineStartView.as_view(),
+        name="pipeline-start",
+    ),
+    path(
+        "api/v1/pipeline/<int:document_id>/status/",
+        PipelineStatusView.as_view(),
+        name="pipeline-status",
+    ),
+    path(
+        "api/v1/pipeline/<int:document_id>/history/",
+        PipelineHistoryView.as_view(),
+        name="pipeline-history",
+    ),
+    path(
+        "api/v1/pipeline/<int:document_id>/restart/",
+        PipelineRestartView.as_view(),
+        name="pipeline-restart",
     ),
     path(
         "api/v1/audit/",

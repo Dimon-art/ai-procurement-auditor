@@ -1,5 +1,7 @@
 from django.shortcuts import render
+from django.utils import timezone
 
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,6 +9,7 @@ from rest_framework.views import APIView
 from apps.audit.service import create_audit_log
 from apps.companies.models import Company
 from apps.documents.models import Document
+from apps.documents.pipeline_serializers import PipelineHistorySerializer
 from apps.documents.serializers import (
     DocumentSerializer,
     DocumentUploadSerializer,
@@ -162,7 +165,7 @@ class DocumentListView(APIView):
                 "message": None,
                 "errors": [],
             },
-            status=201,
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -185,7 +188,7 @@ class DocumentDetailView(APIView):
                     "message": "Document not found.",
                     "errors": [],
                 },
-                status=404,
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         serializer = DocumentSerializer(document)
@@ -219,7 +222,7 @@ class DocumentStatusView(APIView):
                     "message": "Document not found.",
                     "errors": [],
                 },
-                status=404,
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         return Response(
@@ -253,7 +256,7 @@ class DocumentRecheckView(APIView):
                     "message": "Document not found.",
                     "errors": [],
                 },
-                status=404,
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         report = run_rule_engine(
@@ -308,7 +311,7 @@ class DocumentReportView(APIView):
                     "message": "Document not found.",
                     "errors": [],
                 },
-                status=404,
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         check_results = document.check_results.order_by(
@@ -350,4 +353,215 @@ class DocumentReportView(APIView):
                 "message": None,
                 "errors": [],
             }
+        )
+
+
+def _get_pipeline_document(request, document_id):
+    company = request.user.profile.company
+
+    return Document.objects.filter(
+        company=company,
+        pk=document_id,
+    ).first()
+
+
+def _run_pipeline(request, document):
+    claimed = (
+        Document.objects
+        .filter(
+            pk=document.pk,
+            company=document.company,
+        )
+        .exclude(
+            status=Document.Status.OCR_PROCESSING,
+        )
+        .update(
+            status=Document.Status.OCR_PROCESSING,
+            updated_at=timezone.now(),
+        )
+    )
+
+    if claimed == 0:
+        return Response(
+            {
+                "success": False,
+                "data": None,
+                "message": "Document pipeline is already running.",
+                "errors": [],
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    document.refresh_from_db()
+
+    try:
+        ocr_service = get_ocr_service()
+
+        process_document_ocr(
+            document,
+            ocr_service,
+        )
+
+    except Exception:
+        return Response(
+            {
+                "success": False,
+                "data": None,
+                "message": "Pipeline processing failed.",
+                "errors": [],
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    document.refresh_from_db()
+
+    create_audit_log(
+        company=document.company,
+        user=request.user,
+        document=document,
+        action="pipeline.run",
+        entity_type="document",
+        entity_id=str(document.pk),
+        new_value={
+            "status": document.status,
+        },
+        metadata={
+            "source": "api",
+        },
+    )
+
+    return Response(
+        {
+            "success": True,
+            "data": {
+                "document_id": document.pk,
+                "status": document.status,
+            },
+            "message": None,
+            "errors": [],
+        }
+    )
+
+
+class PipelineStartView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, document_id):
+        document = _get_pipeline_document(
+            request,
+            document_id,
+        )
+
+        if document is None:
+            return Response(
+                {
+                    "success": False,
+                    "data": None,
+                    "message": "Document not found.",
+                    "errors": [],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return _run_pipeline(
+            request,
+            document,
+        )
+
+
+class PipelineStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, document_id):
+        document = _get_pipeline_document(
+            request,
+            document_id,
+        )
+
+        if document is None:
+            return Response(
+                {
+                    "success": False,
+                    "data": None,
+                    "message": "Document not found.",
+                    "errors": [],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "document_id": document.pk,
+                    "status": document.status,
+                },
+                "message": None,
+                "errors": [],
+            }
+        )
+
+
+class PipelineHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, document_id):
+        document = _get_pipeline_document(
+            request,
+            document_id,
+        )
+
+        if document is None:
+            return Response(
+                {
+                    "success": False,
+                    "data": None,
+                    "message": "Document not found.",
+                    "errors": [],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        history = document.ocr_results.order_by(
+            "-created_at",
+        )
+
+        serializer = PipelineHistorySerializer(
+            history,
+            many=True,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": serializer.data,
+                "message": None,
+                "errors": [],
+            }
+        )
+
+
+class PipelineRestartView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, document_id):
+        document = _get_pipeline_document(
+            request,
+            document_id,
+        )
+
+        if document is None:
+            return Response(
+                {
+                    "success": False,
+                    "data": None,
+                    "message": "Document not found.",
+                    "errors": [],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return _run_pipeline(
+            request,
+            document,
         )

@@ -991,3 +991,280 @@ class DocumentReportAPITests(APITestCase):
         self.assertIsNone(
             response.data["data"],
         )
+
+class PipelineAPITests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="pipelineapi",
+            password="StrongTestPassword123!",
+        )
+
+        self.company = Company.objects.create(
+            name="Pipeline API Company",
+        )
+
+        self.other_company = Company.objects.create(
+            name="Other Pipeline Company",
+        )
+
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Pipeline API User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        self.document = Document.objects.create(
+            company=self.company,
+            original_file=SimpleUploadedFile(
+                "pipeline_invoice.pdf",
+                b"fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="pipeline_invoice.pdf",
+            file_size=len(b"fake pdf content"),
+            status=Document.Status.UPLOADED,
+        )
+
+        self.other_document = Document.objects.create(
+            company=self.other_company,
+            original_file=SimpleUploadedFile(
+                "other_pipeline_invoice.pdf",
+                b"other fake pdf content",
+                content_type="application/pdf",
+            ),
+            filename="other_pipeline_invoice.pdf",
+            file_size=len(b"other fake pdf content"),
+            status=Document.Status.UPLOADED,
+        )
+
+    def authenticate(self):
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "username": "pipelineapi",
+                "password": "StrongTestPassword123!",
+            },
+            format="json",
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}",
+        )
+
+    def test_pipeline_requires_authentication(self):
+        response = self.client.get(
+            reverse(
+                "pipeline-status",
+                kwargs={"document_id": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_pipeline_status_returns_current_status(self):
+        self.authenticate()
+
+        response = self.client.get(
+            reverse(
+                "pipeline-status",
+                kwargs={"document_id": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["data"]["document_id"],
+            self.document.pk,
+        )
+
+        self.assertEqual(
+            response.data["data"]["status"],
+            Document.Status.UPLOADED,
+        )
+
+    def test_pipeline_history_returns_ocr_attempts(self):
+        OCRResult.objects.create(
+            document=self.document,
+            provider="mock",
+            raw_text="Pipeline OCR text",
+            confidence=0.95,
+            processing_time_ms=100,
+        )
+
+        self.authenticate()
+
+        response = self.client.get(
+            reverse(
+                "pipeline-history",
+                kwargs={"document_id": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data["data"]),
+            1,
+        )
+
+        self.assertEqual(
+            response.data["data"][0]["provider"],
+            "mock",
+        )
+
+        self.assertEqual(
+            response.data["data"][0]["confidence"],
+            0.95,
+        )
+
+    @patch(
+        "apps.documents.views.get_ocr_service",
+        return_value=MockOCRService(),
+    )
+    def test_pipeline_start_runs_processing(
+        self,
+        mock_get_ocr_service,
+    ):
+        self.authenticate()
+
+        response = self.client.post(
+            reverse(
+                "pipeline-start",
+                kwargs={"document_id": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.document.refresh_from_db()
+
+        self.assertEqual(
+            self.document.status,
+            Document.Status.OCR_COMPLETED,
+        )
+
+        self.assertTrue(
+            OCRResult.objects.filter(
+                document=self.document,
+            ).exists(),
+        )
+
+        self.assertTrue(
+            AuditLog.objects.filter(
+                company=self.company,
+                document=self.document,
+                action="pipeline.run",
+            ).exists(),
+        )
+
+    @patch(
+        "apps.documents.views.get_ocr_service",
+        return_value=MockOCRService(),
+    )
+    def test_pipeline_restart_runs_processing_again(
+        self,
+        mock_get_ocr_service,
+    ):
+        OCRResult.objects.create(
+            document=self.document,
+            provider="mock",
+            raw_text="Previous OCR result",
+            confidence=0.90,
+        )
+
+        self.document.status = Document.Status.OCR_COMPLETED
+        self.document.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        self.authenticate()
+
+        response = self.client.post(
+            reverse(
+                "pipeline-restart",
+                kwargs={"document_id": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            OCRResult.objects.filter(
+                document=self.document,
+            ).count(),
+            2,
+        )
+
+    def test_pipeline_rejects_second_running_pipeline(self):
+        self.document.status = Document.Status.OCR_PROCESSING
+        self.document.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        self.authenticate()
+
+        response = self.client.post(
+            reverse(
+                "pipeline-start",
+                kwargs={"document_id": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_409_CONFLICT,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+    def test_pipeline_does_not_access_other_company_document(self):
+        self.authenticate()
+
+        response = self.client.get(
+            reverse(
+                "pipeline-status",
+                kwargs={"document_id": self.other_document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+        self.assertFalse(
+            response.data["success"],
+        )
+
+        self.assertIsNone(
+            response.data["data"],
+        )

@@ -28,9 +28,38 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    SELLER_TAX_PATTERN = re.compile(
+        r"ИНН/КПП\s+(?:продавца|поставщика)\s*:\s*"
+        r"(\d{10}|\d{12})\s*/\s*(\d{9})",
+        re.IGNORECASE,
+    )
+
+    BUYER_TAX_PATTERN = re.compile(
+        r"ИНН/КПП\s+покупателя\s*:\s*"
+        r"(\d{10}|\d{12})\s*/\s*(\d{9})",
+        re.IGNORECASE,
+    )
+
     SUPPLIER_NAME_PATTERN = re.compile(
         r"^\s*(?:поставщик|продавец)\s*:\s*(.+?)\s*$",
         re.IGNORECASE | re.MULTILINE,
+    )
+
+    UPD_PATTERN = re.compile(
+        r"\bупд\b"
+        r"|универсаль\s*ный\s+передаточн\s*ый\s+документ"
+        r"|универсальный\s+передаточный\s+документ",
+        re.IGNORECASE,
+    )
+
+    INVOICE_PATTERN = re.compile(
+        r"\bсч[её]т(?:-фактура)?\b",
+        re.IGNORECASE,
+    )
+
+    WAYBILL_PATTERN = re.compile(
+        r"\bнакладная\b",
+        re.IGNORECASE,
     )
 
     DOCUMENT_TYPE_PATTERN = re.compile(
@@ -39,11 +68,19 @@ class FieldExtractor:
     )
 
     DOCUMENT_NUMBER_PATTERN = re.compile(
-        r"\b(?:сч[её]т|упд|накладная|документ)\b"
-        r"\s*(?:№|N|No\.?)?\s*"
+        r"\b(?:сч[её]т(?:-фактура)?|упд|накладная|документ)\b"
+        r"\s*(?:№|N|No\.?)\s*"
         r"([A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9/_\-]*)",
         re.IGNORECASE,
-)
+    )
+
+    DOCUMENT_LINE_DATE_PATTERN = re.compile(
+        r"\b(?:сч[её]т(?:-фактура)?|упд|накладная|документ)\b"
+        r"[^\n]{0,160}?"
+        r"\bот\s*"
+        r"(\d{1,2}\.\d{1,2}\.\d{4})",
+        re.IGNORECASE,
+    )
 
     DOCUMENT_DATE_PATTERN = re.compile(
         r"(?:от|дата)"
@@ -66,12 +103,66 @@ class FieldExtractor:
         re.IGNORECASE,
     )
 
+    TOTALS_BLOCK_PATTERN = re.compile(
+        r"всего\s+к\s+оплате",
+        re.IGNORECASE,
+    )
+
+    MONEY_PATTERN = re.compile(
+        r"(?<!\d)"
+        r"\d{1,3}(?:\s\d{3})*"
+        r"(?:[.,]\d{2})"
+        r"(?!\d)",
+    )
+
     CURRENCY_PATTERN = re.compile(
         r"\b(RUB|USD|EUR)\b"
         r"|(?<!\w)(₽|\$|€)(?!\w)"
         r"|\b(руб(?:\.|лей|ля|ль)?)(?!\w)",
         re.IGNORECASE,
     )
+
+    @staticmethod
+    def _normalize_amount(
+        raw_amount: str,
+    ) -> str | None:
+        normalized_candidate = (
+            raw_amount
+            .replace(" ", "")
+            .replace("\n", "")
+            .replace(",", ".")
+        )
+
+        try:
+            return str(
+                Decimal(normalized_candidate)
+            )
+        except InvalidOperation:
+            return None
+
+    def _extract_totals_block_amounts(
+        self,
+        text: str,
+    ) -> list[str]:
+        match = self.TOTALS_BLOCK_PATTERN.search(text)
+
+        if match is None:
+            return []
+
+        block = text[
+            match.end():
+            match.end() + 250
+        ]
+
+        block = re.sub(
+            r"\s+",
+            " ",
+            block,
+        )
+
+        return self.MONEY_PATTERN.findall(
+            block,
+        )
 
     def extract_supplier_inn(
         self,
@@ -80,12 +171,19 @@ class FieldExtractor:
         if not text:
             return None
 
-        match = self.INN_PATTERN.search(text)
+        seller_match = self.SELLER_TAX_PATTERN.search(
+            text,
+        )
 
-        if match is None:
-            return None
+        if seller_match is not None:
+            inn = seller_match.group(1)
+        else:
+            match = self.INN_PATTERN.search(text)
 
-        inn = match.group(1)
+            if match is None:
+                return None
+
+            inn = match.group(1)
 
         return ExtractedField(
             field_name="supplier_inn",
@@ -102,15 +200,66 @@ class FieldExtractor:
         if not text:
             return None
 
-        match = self.KPP_PATTERN.search(text)
+        seller_match = self.SELLER_TAX_PATTERN.search(
+            text,
+        )
+
+        if seller_match is not None:
+            kpp = seller_match.group(2)
+        else:
+            match = self.KPP_PATTERN.search(text)
+
+            if match is None:
+                return None
+
+            kpp = match.group(1)
+
+        return ExtractedField(
+            field_name="supplier_kpp",
+            raw_value=kpp,
+            normalized_value=kpp,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_buyer_inn(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        if not text:
+            return None
+
+        match = self.BUYER_TAX_PATTERN.search(text)
 
         if match is None:
             return None
 
-        kpp = match.group(1)
+        inn = match.group(1)
 
         return ExtractedField(
-            field_name="supplier_kpp",
+            field_name="buyer_inn",
+            raw_value=inn,
+            normalized_value=inn,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
+    def extract_buyer_kpp(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        if not text:
+            return None
+
+        match = self.BUYER_TAX_PATTERN.search(text)
+
+        if match is None:
+            return None
+
+        kpp = match.group(2)
+
+        return ExtractedField(
+            field_name="buyer_kpp",
             raw_value=kpp,
             normalized_value=kpp,
             confidence=1.0,
@@ -130,7 +279,9 @@ class FieldExtractor:
             return None
 
         raw_name = match.group(1).strip()
-        normalized_name = " ".join(raw_name.split())
+        normalized_name = " ".join(
+            raw_name.split()
+        )
 
         if not normalized_name:
             return None
@@ -150,28 +301,44 @@ class FieldExtractor:
         if not text:
             return None
 
-        match = self.DOCUMENT_TYPE_PATTERN.search(text)
+        upd_match = self.UPD_PATTERN.search(text)
 
-        if match is None:
-            return None
+        if upd_match is not None:
+            return ExtractedField(
+                field_name="document_type",
+                raw_value=upd_match.group(0),
+                normalized_value="upd",
+                confidence=1.0,
+                extraction_method="regex",
+            )
 
-        raw_type = match.group(1)
-        type_lower = raw_type.lower().replace("ё", "е")
-
-        if type_lower == "счет":
-            normalized_type = "invoice"
-        elif type_lower == "упд":
-            normalized_type = "upd"
-        else:
-            normalized_type = "waybill"
-
-        return ExtractedField(
-            field_name="document_type",
-            raw_value=raw_type,
-            normalized_value=normalized_type,
-            confidence=1.0,
-            extraction_method="regex",
+        invoice_match = self.INVOICE_PATTERN.search(
+            text,
         )
+
+        if invoice_match is not None:
+            return ExtractedField(
+                field_name="document_type",
+                raw_value=invoice_match.group(0),
+                normalized_value="invoice",
+                confidence=1.0,
+                extraction_method="regex",
+            )
+
+        waybill_match = self.WAYBILL_PATTERN.search(
+            text,
+        )
+
+        if waybill_match is not None:
+            return ExtractedField(
+                field_name="document_type",
+                raw_value=waybill_match.group(0),
+                normalized_value="waybill",
+                confidence=1.0,
+                extraction_method="regex",
+            )
+
+        return None
 
     def extract_document_number(
         self,
@@ -180,17 +347,19 @@ class FieldExtractor:
         if not text:
             return None
 
-        match = self.DOCUMENT_NUMBER_PATTERN.search(text)
+        match = self.DOCUMENT_NUMBER_PATTERN.search(
+            text,
+        )
 
         if match is None:
             return None
 
-        raw_number = match.group(1)
+        raw_number = match.group(1).strip()
 
         return ExtractedField(
             field_name="document_number",
             raw_value=raw_number,
-            normalized_value=raw_number.strip(),
+            normalized_value=raw_number,
             confidence=1.0,
             extraction_method="regex",
         )
@@ -202,7 +371,14 @@ class FieldExtractor:
         if not text:
             return None
 
-        match = self.DOCUMENT_DATE_PATTERN.search(text)
+        match = self.DOCUMENT_LINE_DATE_PATTERN.search(
+            text,
+        )
+
+        if match is None:
+            match = self.DOCUMENT_DATE_PATTERN.search(
+                text,
+            )
 
         if match is None:
             return None
@@ -225,6 +401,37 @@ class FieldExtractor:
             extraction_method="regex",
         )
 
+    def extract_amount_without_vat(
+        self,
+        text: str,
+    ) -> ExtractedField | None:
+        if not text:
+            return None
+
+        amounts = self._extract_totals_block_amounts(
+            text,
+        )
+
+        if len(amounts) < 3:
+            return None
+
+        raw_amount = amounts[-3]
+
+        normalized_amount = self._normalize_amount(
+            raw_amount,
+        )
+
+        if normalized_amount is None:
+            return None
+
+        return ExtractedField(
+            field_name="amount_without_vat",
+            raw_value=raw_amount,
+            normalized_value=normalized_amount,
+            confidence=1.0,
+            extraction_method="regex",
+        )
+
     def extract_total_amount(
         self,
         text: str,
@@ -232,24 +439,27 @@ class FieldExtractor:
         if not text:
             return None
 
-        match = self.TOTAL_AMOUNT_PATTERN.search(text)
-
-        if match is None:
-            return None
-
-        raw_amount = match.group(1).strip()
-
-        normalized_candidate = (
-            raw_amount
-            .replace(" ", "")
-            .replace(",", ".")
+        amounts = self._extract_totals_block_amounts(
+            text,
         )
 
-        try:
-            normalized_amount = str(
-                Decimal(normalized_candidate)
+        if amounts:
+            raw_amount = amounts[-1]
+        else:
+            match = self.TOTAL_AMOUNT_PATTERN.search(
+                text,
             )
-        except InvalidOperation:
+
+            if match is None:
+                return None
+
+            raw_amount = match.group(1).strip()
+
+        normalized_amount = self._normalize_amount(
+            raw_amount,
+        )
+
+        if normalized_amount is None:
             return None
 
         return ExtractedField(
@@ -267,24 +477,27 @@ class FieldExtractor:
         if not text:
             return None
 
-        match = self.VAT_AMOUNT_PATTERN.search(text)
-
-        if match is None:
-            return None
-
-        raw_amount = match.group(1).strip()
-
-        normalized_candidate = (
-            raw_amount
-            .replace(" ", "")
-            .replace(",", ".")
+        amounts = self._extract_totals_block_amounts(
+            text,
         )
 
-        try:
-            normalized_amount = str(
-                Decimal(normalized_candidate)
+        if len(amounts) >= 3:
+            raw_amount = amounts[-2]
+        else:
+            match = self.VAT_AMOUNT_PATTERN.search(
+                text,
             )
-        except InvalidOperation:
+
+            if match is None:
+                return None
+
+            raw_amount = match.group(1).strip()
+
+        normalized_amount = self._normalize_amount(
+            raw_amount,
+        )
+
+        if normalized_amount is None:
             return None
 
         return ExtractedField(
@@ -310,7 +523,11 @@ class FieldExtractor:
         raw_currency = match.group(0)
         currency_upper = raw_currency.upper()
 
-        if currency_upper in {"RUB", "USD", "EUR"}:
+        if currency_upper in {
+            "RUB",
+            "USD",
+            "EUR",
+        }:
             normalized_currency = currency_upper
         elif raw_currency == "$":
             normalized_currency = "USD"

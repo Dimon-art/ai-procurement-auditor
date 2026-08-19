@@ -146,6 +146,80 @@ class DocumentFieldsServiceTests(TestCase):
             "RUB",
         )
 
+    def test_extract_and_save_real_upd_fields(self):
+        ocr_result = OCRResult.objects.create(
+            document=self.document,
+            provider="yandex",
+            raw_text="""
+            Универсаль
+            ный
+            передаточн
+            ый документ
+
+            Счет-фактура № 631582 от 25 апреля 2025 г.
+
+            Продавец: Общество с ограниченной ответственностью "ШИНСЕРВИС"
+
+            ИНН/КПП продавца: 7725693620/774950001
+
+            Документ об отгрузке:
+            Универсальный передаточный документ № 631582 от 25.04.2025
+
+            Покупатель: ООО "ИСК "БУРСЕРВИС"
+
+            ИНН/КПП покупателя: 7810022206/780601001
+
+            Валюта: наименование, код Российский рубль, 643
+
+            Всего к оплате
+            4,00 23
+            400,00
+            4 680,00
+            28 080,00
+            """,
+        )
+
+        saved_fields = extract_and_save_document_fields(
+            ocr_result,
+        )
+
+        self.assertEqual(
+            len(saved_fields),
+            12,
+        )
+
+        expected_fields = {
+            "supplier_name": (
+                'Общество с ограниченной ответственностью '
+                '"ШИНСЕРВИС"'
+            ),
+            "supplier_inn": "7725693620",
+            "supplier_kpp": "774950001",
+            "buyer_inn": "7810022206",
+            "buyer_kpp": "780601001",
+            "document_type": "upd",
+            "document_number": "631582",
+            "document_date": "2025-04-25",
+            "amount_without_vat": "23400.00",
+            "vat_amount": "4680.00",
+            "total_amount": "28080.00",
+            "currency": "RUB",
+        }
+
+        actual_fields = dict(
+            DocumentField.objects.filter(
+                document=self.document,
+            ).values_list(
+                "field_name",
+                "normalized_value",
+            )
+        )
+
+        self.assertEqual(
+            actual_fields,
+            expected_fields,
+        )
+
     def test_extract_and_save_document_fields_skips_missing_fields(self):
         ocr_result = OCRResult.objects.create(
             document=self.document,

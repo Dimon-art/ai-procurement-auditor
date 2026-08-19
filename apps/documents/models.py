@@ -200,3 +200,102 @@ class DocumentField(models.Model):
             f"{self.field_name} "
             f"for document #{self.document_id}"
         )
+
+
+class DocumentLineItem(models.Model):
+    """
+    Строка товара, работы или услуги в B2B-документе.
+    """
+
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="line_items",
+    )
+
+    line_number = models.PositiveIntegerField()
+
+    description = models.TextField(
+        blank=True,
+    )
+
+    quantity = models.DecimalField(
+        max_digits=18,
+        decimal_places=4,
+        null=True,
+        blank=True,
+    )
+
+    unit = models.CharField(
+        max_length=32,
+        blank=True,
+    )
+
+    unit_price = models.DecimalField(
+        max_digits=18,
+        decimal_places=4,
+        null=True,
+        blank=True,
+    )
+
+    amount_without_vat = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    vat_rate = models.DecimalField(
+        max_digits=6,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+
+    vat_amount = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    total_amount = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    raw_data = models.JSONField(
+        default=dict,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = [
+            "line_number",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "document",
+                    "line_number",
+                ],
+                name="unique_document_line_number",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Line {self.line_number} "
+            f"for document #{self.document_id}"
+        )

@@ -1569,3 +1569,81 @@ class DocumentDetailPageUITests(APITestCase):
             "decision",
             response.context,
         )
+
+    def test_document_detail_page_uses_only_latest_result_for_each_rule(self):
+        from apps.rules.models import CheckResult
+
+        old_r005 = CheckResult.objects.create(
+            document=self.document,
+            rule_id="R005",
+            status=CheckResult.Status.FAILED,
+            severity="high",
+            score=30,
+            explanation="Old supplier result.",
+        )
+
+        latest_r005 = CheckResult.objects.create(
+            document=self.document,
+            rule_id="R005",
+            status=CheckResult.Status.PASSED,
+            severity="high",
+            score=0,
+            explanation="Latest supplier result.",
+        )
+
+        latest_r009 = CheckResult.objects.create(
+            document=self.document,
+            rule_id="R009",
+            status=CheckResult.Status.FAILED,
+            severity="medium",
+            score=15,
+            explanation="Latest date result.",
+        )
+
+        self.client.force_login(
+            self.user,
+        )
+
+        response = self.client.get(
+            reverse(
+                "document-detail-page",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        check_results = response.context["check_results"]
+
+        self.assertEqual(
+            len(check_results),
+            2,
+        )
+
+        results_by_rule = {
+            result.rule_id: result
+            for result in check_results
+        }
+
+        self.assertEqual(
+            results_by_rule["R005"].pk,
+            latest_r005.pk,
+        )
+
+        self.assertEqual(
+            results_by_rule["R009"].pk,
+            latest_r009.pk,
+        )
+
+        self.assertNotIn(
+            old_r005,
+            check_results,
+        )
+
+        self.assertEqual(
+            response.context["risk_score"],
+            15,
+        )

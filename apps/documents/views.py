@@ -581,6 +581,17 @@ class DocumentListPageView(LoginRequiredMixin, ListView):
             company=self.request.user.profile.company,
         ).order_by("-created_at")
 
+class DocumentListPageView(LoginRequiredMixin, ListView):
+    model = Document
+    template_name = "documents/list.html"
+    context_object_name = "documents"
+
+    def get_queryset(self):
+        return Document.objects.filter(
+            company=self.request.user.profile.company,
+        ).order_by("-created_at")
+
+
 class DocumentDetailPageView(LoginRequiredMixin, DetailView):
     model = Document
     template_name = "documents/detail.html"
@@ -600,14 +611,49 @@ class DocumentDetailPageView(LoginRequiredMixin, DetailView):
             "field_name",
         )
 
-        context["ocr_result"] = document.ocr_results.order_by(
-            "-created_at",
-        ).first()
-
-        context["check_results"] = document.check_results.order_by(
-            "rule_id",
-            "created_at",
+        context["ocr_result"] = (
+            document.ocr_results
+            .order_by(
+                "-created_at",
+                "-id",
+            )
+            .first()
         )
+
+        latest_check_results = []
+
+        rule_ids = (
+            document.check_results
+            .values_list(
+                "rule_id",
+                flat=True,
+            )
+            .distinct()
+        )
+
+        for rule_id in rule_ids:
+            latest_result = (
+                document.check_results
+                .filter(
+                    rule_id=rule_id,
+                )
+                .order_by(
+                    "-created_at",
+                    "-id",
+                )
+                .first()
+            )
+
+            if latest_result is not None:
+                latest_check_results.append(
+                    latest_result
+                )
+
+        latest_check_results.sort(
+            key=lambda result: result.rule_id,
+        )
+
+        context["check_results"] = latest_check_results
 
         context["risk_score"] = calculate_risk_score(
             document,

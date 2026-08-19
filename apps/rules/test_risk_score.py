@@ -65,3 +65,37 @@ class RiskScoreTests(TestCase):
             score,
             45,
         )
+
+    def test_uses_only_latest_result_for_each_rule(self):
+        CheckResult.objects.create(
+            document=self.document,
+            rule_id="R005",
+            status=CheckResult.Status.FAILED,
+            severity="high",
+            score=30,
+        )
+
+        CheckResult.objects.create(
+            document=self.document,
+            rule_id="R005",
+            status=CheckResult.Status.PASSED,
+            severity="high",
+            score=0,
+        )
+
+        CheckResult.objects.create(
+            document=self.document,
+            rule_id="R009",
+            status=CheckResult.Status.FAILED,
+            severity="medium",
+            score=15,
+        )
+
+        score = calculate_risk_score(
+            self.document,
+        )
+
+        self.assertEqual(
+            score,
+            15,
+        )

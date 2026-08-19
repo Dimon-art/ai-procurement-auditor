@@ -1,5 +1,3 @@
-from django.db.models import Sum
-
 from apps.documents.models import Document
 from apps.rules.models import CheckResult
 
@@ -8,13 +6,33 @@ def calculate_risk_score(
     document: Document,
 ) -> int:
     """
-    Calculate the total risk score for a document.
+    Calculate the total risk score using only
+    the latest result for each rule.
     """
 
-    result = (
+    latest_scores = []
+
+    rule_ids = (
         CheckResult.objects
         .filter(document=document)
-        .aggregate(total=Sum("score"))
+        .values_list("rule_id", flat=True)
+        .distinct()
     )
 
-    return result["total"] or 0
+    for rule_id in rule_ids:
+        latest_result = (
+            CheckResult.objects
+            .filter(
+                document=document,
+                rule_id=rule_id,
+            )
+            .order_by("-created_at", "-id")
+            .first()
+        )
+
+        if latest_result is not None:
+            latest_scores.append(
+                latest_result.score
+            )
+
+    return sum(latest_scores)

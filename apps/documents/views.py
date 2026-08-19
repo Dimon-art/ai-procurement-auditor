@@ -1,5 +1,8 @@
-from django.shortcuts import render
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views import View
+from django.views.generic import DetailView, ListView
 
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -22,10 +25,6 @@ from apps.rules.risk_score import calculate_risk_score
 from apps.rules.service import run_rule_engine
 
 
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import render
-from django.utils import timezone
-from django.views.generic import  DetailView, ListView
 
 def upload_document(request):
     """
@@ -581,16 +580,6 @@ class DocumentListPageView(LoginRequiredMixin, ListView):
             company=self.request.user.profile.company,
         ).order_by("-created_at")
 
-class DocumentListPageView(LoginRequiredMixin, ListView):
-    model = Document
-    template_name = "documents/list.html"
-    context_object_name = "documents"
-
-    def get_queryset(self):
-        return Document.objects.filter(
-            company=self.request.user.profile.company,
-        ).order_by("-created_at")
-
 
 class DocumentDetailPageView(LoginRequiredMixin, DetailView):
     model = Document
@@ -664,3 +653,45 @@ class DocumentDetailPageView(LoginRequiredMixin, DetailView):
         )
 
         return context
+
+class DocumentApprovePageView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        document = get_object_or_404(
+            Document,
+            company=request.user.profile.company,
+            pk=pk,
+        )
+
+        previous_status = document.status
+
+        document.status = Document.Status.VERIFIED
+        document.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        create_audit_log(
+            company=document.company,
+            user=request.user,
+            document=document,
+            action="document.approve",
+            entity_type="document",
+            entity_id=str(document.pk),
+            previous_value={
+                "status": previous_status,
+            },
+            new_value={
+                "status": document.status,
+            },
+            metadata={
+                "source": "web",
+            },
+        )
+
+        return redirect(
+            "document-detail-page",
+            pk=document.pk,
+        )
+

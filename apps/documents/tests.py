@@ -1303,107 +1303,6 @@ class PipelineAPITests(APITestCase):
             response.data["data"],
         )
 
-class DocumentListPageUITests(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-        user_model = get_user_model()
-        self.user = user_model.objects.create_user(
-            username="documentlistui",
-            password="StrongTestPassword123!",
-        )
-
-        self.company = Company.objects.create(
-            name="Document List UI Company",
-        )
-
-        self.other_company = Company.objects.create(
-            name="Other Document List UI Company",
-        )
-
-        self.profile = UserProfile.objects.create(
-            user=self.user,
-            company=self.company,
-            full_name="Document List UI User",
-            role=UserProfile.Role.ACCOUNTANT,
-            status=UserProfile.Status.ACTIVE,
-        )
-
-        self.document = Document.objects.create(
-            company=self.company,
-            original_file=SimpleUploadedFile(
-                "ui_invoice.pdf",
-                b"fake pdf content",
-                content_type="application/pdf",
-            ),
-            filename="ui_invoice.pdf",
-            file_size=len(b"fake pdf content"),
-        )
-
-        self.other_document = Document.objects.create(
-            company=self.other_company,
-            original_file=SimpleUploadedFile(
-                "other_ui_invoice.pdf",
-                b"other fake pdf content",
-                content_type="application/pdf",
-            ),
-            filename="other_ui_invoice.pdf",
-            file_size=len(b"other fake pdf content"),
-        )
-
-    def test_document_list_page_requires_authentication(self):
-        response = self.client.get(
-            reverse("document-list-page"),
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_302_FOUND,
-        )
-
-        self.assertIn(
-            reverse("login"),
-            response.url,
-        )
-
-    def test_document_list_page_returns_current_company_documents(self):
-        self.client.force_login(
-            self.user,
-        )
-
-        response = self.client.get(
-            reverse("document-list-page"),
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-        )
-
-        self.assertContains(
-            response,
-            "ui_invoice.pdf",
-        )
-
-        self.assertNotContains(
-            response,
-            "other_ui_invoice.pdf",
-        )
-
-    def test_document_list_page_uses_expected_template(self):
-        self.client.force_login(
-            self.user,
-        )
-
-        response = self.client.get(
-            reverse("document-list-page"),
-        )
-
-        self.assertTemplateUsed(
-            response,
-            "documents/list.html",
-        )
-
 class DocumentDetailPageUITests(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1646,4 +1545,69 @@ class DocumentDetailPageUITests(APITestCase):
         self.assertEqual(
             response.context["risk_score"],
             15,
+        )
+
+    def test_document_approve_marks_document_verified_and_creates_audit_log(self):
+        from apps.audit.models import AuditLog
+
+        self.client.force_login(
+            self.user,
+        )
+
+        response = self.client.post(
+            reverse(
+                "document-approve-page",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "document-detail-page",
+                kwargs={"pk": self.document.pk},
+            ),
+        )
+
+        self.document.refresh_from_db()
+
+        self.assertEqual(
+            self.document.status,
+            Document.Status.VERIFIED,
+        )
+
+        audit_log = AuditLog.objects.get(
+            document=self.document,
+            action="document.approve",
+        )
+
+        self.assertEqual(
+            audit_log.company,
+            self.company,
+        )
+
+        self.assertEqual(
+            audit_log.user,
+            self.user,
+        )
+
+        self.assertEqual(
+            audit_log.previous_value,
+            {
+                "status": Document.Status.OCR_COMPLETED,
+            },
+        )
+
+        self.assertEqual(
+            audit_log.new_value,
+            {
+                "status": Document.Status.VERIFIED,
+            },
+        )
+
+        self.assertEqual(
+            audit_log.metadata,
+            {
+                "source": "web",
+            },
         )

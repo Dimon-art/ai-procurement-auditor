@@ -31,6 +31,22 @@
             <strong>Uploaded:</strong>
             {{ document.created_at }}
         </p>
+
+        {% if document.status != "verified" %}
+            <form
+                method="post"
+                action="{% url 'document-approve-page' document.pk %}"
+            >
+                {% csrf_token %}
+                <button type="submit">
+                    Approve document
+                </button>
+            </form>
+        {% else %}
+            <p>
+                <strong>Document approved.</strong>
+            </p>
+        {% endif %}
     </section>
 
     <section>

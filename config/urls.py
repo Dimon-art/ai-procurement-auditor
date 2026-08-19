@@ -9,6 +9,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.audit.views import AuditLogDetailView, AuditLogListView
 from apps.companies.views import CompanyListView
 from apps.documents.views import (
+    DocumentApprovePageView,
     DocumentDetailPageView,
     DocumentDetailView,
     DocumentListPageView,
@@ -52,6 +53,11 @@ urlpatterns = [
         "documents/upload/",
         upload_document,
         name="document-upload",
+    ),
+    path(
+        "documents/<int:pk>/approve/",
+        DocumentApprovePageView.as_view(),
+        name="document-approve-page",
     ),
     path(
         "documents/<int:pk>/",

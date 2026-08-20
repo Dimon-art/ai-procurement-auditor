@@ -252,13 +252,30 @@ class DocumentUploadViewTests(TestCase):
         )
 
     @patch(
-        "apps.documents.views.get_ocr_service",
-        return_value=MockOCRService(),
+        "apps.documents.views.process_document",
     )
     def test_successful_upload_shows_ocr_text(
         self,
-        mock_get_ocr_service,
+        mock_process_document,
     ):
+        def process_document(document):
+            OCRResult.objects.create(
+                document=document,
+                provider="mock",
+                raw_text="Mock OCR text",
+                confidence=1.0,
+            )
+
+            document.status = Document.Status.VERIFIED
+            document.save(
+                update_fields=[
+                    "status",
+                    "updated_at",
+                ]
+            )
+
+        mock_process_document.side_effect = process_document
+
         response = self.client.post(
             "/documents/upload/",
             {
@@ -271,11 +288,18 @@ class DocumentUploadViewTests(TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Mock OCR text")
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertContains(
+            response,
+            "Mock OCR text",
+        )
 
         document = Document.objects.get(
-            filename="success_invoice.pdf"
+            filename="success_invoice.pdf",
         )
 
         self.assertEqual(
@@ -288,19 +312,18 @@ class DocumentUploadViewTests(TestCase):
             64,
         )
 
+        mock_process_document.assert_called_once_with(
+            document,
+        )
+
     @patch(
-        "apps.documents.views.process_document_ocr"
-    )
-    @patch(
-        "apps.documents.views.get_ocr_service",
-        return_value=MockOCRService(),
+        "apps.documents.views.process_document",
     )
     def test_successful_upload_shows_extracted_fields(
         self,
-        mock_get_ocr_service,
-        mock_process_document_ocr,
+        mock_process_document,
     ):
-        def process_ocr(document, ocr_service):
+        def process_document(document):
             OCRResult.objects.create(
                 document=document,
                 provider="mock",
@@ -317,12 +340,15 @@ class DocumentUploadViewTests(TestCase):
                 extraction_method="regex",
             )
 
-            document.status = Document.Status.OCR_COMPLETED
+            document.status = Document.Status.VERIFIED
             document.save(
-                update_fields=["status", "updated_at"]
+                update_fields=[
+                    "status",
+                    "updated_at",
+                ]
             )
 
-        mock_process_document_ocr.side_effect = process_ocr
+        mock_process_document.side_effect = process_document
 
         response = self.client.post(
             "/documents/upload/",
@@ -336,18 +362,51 @@ class DocumentUploadViewTests(TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "supplier_inn")
-        self.assertContains(response, "7704458262")
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertContains(
+            response,
+            "supplier_inn",
+        )
+
+        self.assertContains(
+            response,
+            "7704458262",
+        )
+
+        document = Document.objects.get(
+            filename="fields_invoice.pdf",
+        )
+
+        mock_process_document.assert_called_once_with(
+            document,
+        )
 
     @patch(
-        "apps.documents.views.get_ocr_service",
-        return_value=FailingOCRService(),
+        "apps.documents.views.process_document",
     )
     def test_ocr_failure_does_not_crash_upload_view(
         self,
-        mock_get_ocr_service,
+        mock_process_document,
     ):
+        def process_document(document):
+            document.status = Document.Status.ERROR
+            document.save(
+                update_fields=[
+                    "status",
+                    "updated_at",
+                ]
+            )
+
+            raise RuntimeError(
+                "OCR service failed",
+            )
+
+        mock_process_document.side_effect = process_document
+
         response = self.client.post(
             "/documents/upload/",
             {
@@ -360,15 +419,22 @@ class DocumentUploadViewTests(TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
 
         document = Document.objects.get(
-            filename="failed_invoice.pdf"
+            filename="failed_invoice.pdf",
         )
 
         self.assertEqual(
             document.status,
             Document.Status.ERROR,
+        )
+
+        mock_process_document.assert_called_once_with(
+            document,
         )
 
 

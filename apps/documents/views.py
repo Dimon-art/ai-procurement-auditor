@@ -23,7 +23,7 @@ from apps.documents.services.ocr_factory import get_ocr_service
 from apps.rules.decision import determine_document_decision
 from apps.rules.risk_score import calculate_risk_score
 from apps.rules.service import run_rule_engine
-
+from apps.documents.services.pipeline import process_document
 
 
 def upload_document(request):
@@ -62,13 +62,8 @@ def upload_document(request):
             ]
         )
 
-        ocr_service = get_ocr_service()
-
         try:
-            process_document_ocr(
-                document,
-                ocr_service,
-            )
+            process_document(document)
         except Exception:
             pass
 

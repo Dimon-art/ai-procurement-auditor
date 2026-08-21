@@ -4,7 +4,10 @@ from django.contrib import admin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import path
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 from apps.audit.views import AuditLogDetailView, AuditLogListView
 from apps.companies.views import CompanyListView
@@ -25,9 +28,15 @@ from apps.documents.views import (
 )
 from apps.suppliers.views import SupplierListView
 from apps.users.views import CurrentUserProfileView
+from config.health import health_check
 
 
 urlpatterns = [
+    path(
+        "health/",
+        health_check,
+        name="health-check",
+    ),
     path(
         "admin/",
         admin.site.urls,

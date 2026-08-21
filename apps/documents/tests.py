@@ -543,6 +543,33 @@ class DocumentListAPITests(APITestCase):
             response.data["data"][0]["id"],
             self.other_document.id,
         )
+    def test_document_upload_rejects_renamed_executable(self):
+        self.authenticate()
+
+        response = self.client.post(
+            reverse("document-list"),
+            {
+                "original_file": SimpleUploadedFile(
+                    "invoice.pdf",
+                    b"MZfake executable content",
+                    content_type="application/pdf",
+                ),
+            },
+            format="multipart",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(
+            Document.objects.filter(
+                company=self.company,
+                filename="invoice.pdf",
+            ).count(),
+            0,
+        )
 
 class DocumentStatusAPITests(APITestCase):
     def setUp(self):

@@ -24,6 +24,7 @@ from apps.rules.decision import determine_document_decision
 from apps.rules.risk_score import calculate_risk_score
 from apps.rules.service import run_rule_engine
 from apps.documents.services.pipeline import process_document
+from apps.documents.services.file_validation import validate_uploaded_file
 
 
 def upload_document(request):
@@ -133,7 +134,7 @@ class DocumentListView(APIView):
         uploaded_file = serializer.validated_data[
             "original_file"
         ]
-
+        validate_uploaded_file(uploaded_file)
         company = request.user.profile.company
 
         document = Document.objects.create(

@@ -3,88 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Загрузка документа</title>
+    <title>Загрузить документ — AI Procurement Auditor</title>
+    <style>
+        :root {
+            --bg: #f5f7f6;
+            --surface: #ffffff;
+            --text: #1a2e24;
+            --muted: #5f6f68;
+            --border: #d8e0dc;
+            --accent: #1b5e3b;
+            --accent-hover: #14492e;
+            --accent-soft: #e8f2ec;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0.85rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .brand {
+            font-weight: 650;
+            color: var(--accent);
+            letter-spacing: 0.01em;
+        }
+
+        .nav-back {
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .page {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 2rem 1.25rem 3rem;
+        }
+
+        h1 {
+            margin: 0 0 0.5rem;
+            font-size: 1.75rem;
+            font-weight: 650;
+            color: var(--text);
+        }
+
+        .lead {
+            margin: 0 0 1.5rem;
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .meta-list {
+            margin: 0 0 1.25rem;
+            padding: 0;
+            list-style: none;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .meta-list li {
+            margin-bottom: 0.35rem;
+        }
+
+        .meta-list strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .field {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .hint {
+            display: block;
+            margin-top: 0.35rem;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+
+        select,
+        input[type="file"] {
+            width: 100%;
+            font: inherit;
+            color: var(--text);
+        }
+
+        select {
+            padding: 0.55rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+        }
+
+        input[type="file"] {
+            padding: 0.45rem 0;
+        }
+
+        .submit {
+            display: inline-block;
+            margin-top: 0.25rem;
+            padding: 0.7rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            background: var(--accent);
+            color: #fff;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .submit:hover {
+            background: var(--accent-hover);
+        }
+
+        .footnote {
+            margin: 1rem 0 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .result-title {
+            margin: 0 0 0.75rem;
+            font-size: 1.15rem;
+            color: var(--accent);
+        }
+
+        .result-block {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .result-block h2 {
+            margin: 0 0 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 4px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        pre {
+            margin: 0;
+            padding: 0.85rem;
+            overflow: auto;
+            background: #f0f3f1;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        ul.result-fields {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+
+        ul.result-fields li {
+            margin-bottom: 0.35rem;
+        }
+    </style>
 </head>
 <body>
-    <h1>Загрузка документа</h1>
+    <header class="topbar">
+        <div class="brand">AI Procurement Auditor</div>
+        <a class="nav-back" href="{% url 'document-list-page' %}">← К документам</a>
+    </header>
 
-    {% if uploaded_document %}
-        <p>
-            Документ загружен:
-            {{ uploaded_document.filename }}
+    <main class="page">
+        <h1>Загрузить документ</h1>
+        <p class="lead">
+            Загрузите счёт, УПД или другой закупочный документ для автоматической проверки.
         </p>
 
-        <p>
-            Статус:
-            {{ uploaded_document.status }}
-        </p>
+        {% if uploaded_document %}
+            <section class="card">
+                <h2 class="result-title">Результат загрузки</h2>
 
-        {% if document_fields %}
-            <div>
-                <h2>Извлечённые поля</h2>
+                <p>
+                    Документ загружен:
+                    {{ uploaded_document.filename }}
+                </p>
 
-                <ul>
-                    {% for field in document_fields %}
-                        <li>
-                            <strong>{{ field.field_name }}:</strong>
-                            {{ field.normalized_value }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
+                <p>
+                    Статус:
+                    <span class="status-pill">{{ uploaded_document.status }}</span>
+                </p>
+
+                {% if document_fields %}
+                    <div class="result-block">
+                        <h2>Извлечённые поля</h2>
+
+                        <ul class="result-fields">
+                            {% for field in document_fields %}
+                                <li>
+                                    <strong>{{ field.field_name }}:</strong>
+                                    {{ field.normalized_value }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {% if ocr_result %}
+                    {% if ocr_result.raw_text %}
+                        <div class="result-block">
+                            <h2>Распознанный текст</h2>
+                            <pre>{{ ocr_result.raw_text }}</pre>
+                        </div>
+                    {% endif %}
+
+                    {% if ocr_result.error_message %}
+                        <div class="result-block">
+                            <h2>Ошибка OCR</h2>
+                            <p>{{ ocr_result.error_message }}</p>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </section>
         {% endif %}
 
-        {% if ocr_result %}
-            {% if ocr_result.raw_text %}
-                <div>
-                    <h2>Распознанный текст</h2>
-                    <pre>{{ ocr_result.raw_text }}</pre>
+        <section class="card">
+            <ul class="meta-list">
+                <li>
+                    <strong>Допустимые форматы:</strong>
+                    PDF, JPG, JPEG, PNG
+                </li>
+                <li>
+                    <strong>Максимальный размер:</strong>
+                    15 МБ
+                </li>
+            </ul>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label for="company">
+                        Компания, от имени которой загружается документ
+                    </label>
+
+                    <select name="company" id="company" required>
+                        {% for company in companies %}
+                            <option value="{{ company.id }}">
+                                {{ company.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <span class="hint">Выберите организацию, к которой относится документ.</span>
                 </div>
-            {% endif %}
 
-            {% if ocr_result.error_message %}
-                <div>
-                    <h2>Ошибка OCR</h2>
-                    <p>{{ ocr_result.error_message }}</p>
+                <div class="field">
+                    <label for="document">
+                        Файл документа
+                    </label>
+
+                    <input
+                        type="file"
+                        name="document"
+                        id="document"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        required
+                    >
+                    <span class="hint">Выберите PDF, JPG, JPEG или PNG до 15 МБ.</span>
                 </div>
-            {% endif %}
-        {% endif %}
-    {% endif %}
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+                <button class="submit" type="submit">
+                    Загрузить и проверить
+                </button>
+            </form>
 
-        <div>
-            <label for="company">
-                Компания:
-            </label>
-
-            <select name="company" id="company" required>
-                {% for company in companies %}
-                    <option value="{{ company.id }}">
-                        {{ company.name }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div>
-            <label for="document">
-                Документ:
-            </label>
-
-            <input
-                type="file"
-                name="document"
-                id="document"
-                accept=".jpg,.jpeg,.png,.pdf"
-                required
-            >
-        </div>
-
-        <button type="submit">
-            Загрузить
-        </button>
-    </form>
+            <p class="footnote">
+                После загрузки документ будет распознан, проверен по правилам и получит оценку риска.
+            </p>
+        </section>
+    </main>
 </body>
 </html>

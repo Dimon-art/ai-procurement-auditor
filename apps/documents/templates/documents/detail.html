@@ -1,173 +1,1139 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ document.filename }} - AI Procurement Auditor</title>
+    <title>{{ document.filename }} — AI Procurement Auditor</title>
+
+    <style>
+        :root {
+            --green: #14532d;
+            --green-light: #dcfce7;
+            --green-border: #bbf7d0;
+
+            --red: #b91c1c;
+            --red-light: #fee2e2;
+
+            --yellow: #a16207;
+            --yellow-light: #fef3c7;
+
+            --purple: #6b21a8;
+            --purple-light: #f5f3ff;
+            --purple-border: #ddd6fe;
+
+            --text: #1f2937;
+            --muted: #6b7280;
+
+            --background: #f5f7f6;
+            --surface: #ffffff;
+            --border: #e5e7eb;
+
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--background);
+            color: var(--text);
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 32px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-title {
+            color: var(--green);
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .back-link {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: var(--green);
+        }
+
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.2;
+            color: #111827;
+            word-break: break-word;
+        }
+
+        .page-meta {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-badge .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-badge.processing {
+            background: var(--purple-light);
+            color: var(--purple);
+            border: 1px solid var(--purple-border);
+        }
+
+        .status-badge.processing .dot {
+            background: var(--purple);
+        }
+
+        .status-badge.ok {
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+        }
+
+        .status-badge.ok .dot {
+            background: #16a34a;
+        }
+
+        .status-badge.warning {
+            background: var(--yellow-light);
+            color: var(--yellow);
+            border: 1px solid #fde68a;
+        }
+
+        .status-badge.warning .dot {
+            background: #ca8a04;
+        }
+
+        .status-badge.danger {
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid #fecaca;
+        }
+
+        .status-badge.danger .dot {
+            background: var(--red);
+        }
+
+        .panel {
+            margin-top: 24px;
+            padding: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-title {
+            margin: 0 0 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .panel-text {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .panel-text-muted {
+            margin: 8px 0 0;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        .issue-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .issue-item {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .issue-item:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .issue-item:first-child {
+            padding-top: 0;
+        }
+
+        .issue-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .issue-severity {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .issue-severity.high {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .issue-severity.medium {
+            background: var(--yellow-light);
+            color: var(--yellow);
+        }
+
+        .issue-severity.low {
+            background: #f3f4f6;
+            color: var(--muted);
+        }
+
+        .issue-score {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .issue-rule-name {
+            margin: 0 0 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .issue-explanation {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .issue-tech-details {
+            margin-top: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #f9fafb;
+        }
+
+        .issue-tech-details summary {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted);
+            list-style: none;
+        }
+
+        .issue-tech-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .issue-tech-details summary::before {
+            content: "▸ ";
+        }
+
+        .issue-tech-details[open] summary::before {
+            content: "▾ ";
+        }
+
+        .issue-tech-content {
+            padding: 0 10px 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        .issue-tech-content pre {
+            margin: 4px 0 0;
+            padding: 8px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .fields-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 24px;
+        }
+
+        .field-item {
+            min-width: 0;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .field-value {
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .field-empty {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .action-links {
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .secondary-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 9px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            color: var(--green);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .secondary-link:hover {
+            background: var(--green-light);
+        }
+
+        .primary-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 17px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--green);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+        }
+
+        .primary-button:hover {
+            background: #166534;
+        }
+
+        .verified-note {
+            margin: 0;
+            padding: 12px 14px;
+            background: var(--green-light);
+            border: 1px solid var(--green-border);
+            border-radius: 8px;
+            color: var(--green);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .details-block {
+            margin-top: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface);
+            overflow: hidden;
+        }
+
+        .details-block summary {
+            padding: 14px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            list-style: none;
+        }
+
+        .details-block summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .details-block summary::before {
+            content: "▸ ";
+            color: var(--muted);
+        }
+
+        .details-block[open] summary::before {
+            content: "▾ ";
+        }
+
+        .details-content {
+            padding: 0 16px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .data-table th {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .ocr-text {
+            margin: 0;
+            padding: 12px;
+            max-height: 320px;
+            overflow: auto;
+            background: #f9fafb;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .tech-meta {
+            margin: 0 0 8px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .empty-note {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        @media (max-width: 640px) {
+            .top-nav,
+            .content {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .page-title {
+                font-size: 24px;
+            }
+
+            .fields-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <p>
-        <a href="{% url 'document-list-page' %}">
-            Back to documents
+    <header class="top-nav">
+        <div class="brand-title">
+            AI Procurement Auditor
+        </div>
+        <a
+            class="back-link"
+            href="{% url 'document-list-page' %}"
+        >
+            ← К документам
         </a>
-    </p>
+    </header>
 
-    <h1>{{ document.filename }}</h1>
+    <main class="content">
+        <h1 class="page-title">
+            {{ document.filename }}
+        </h1>
 
-    <section>
-        <h2>Document</h2>
-
-        <p>
-            <strong>Status:</strong>
-            {{ document.get_status_display }}
+        <p class="page-meta">
+            Загружен {{ document.created_at|date:"d.m.Y H:i" }}
         </p>
 
-        <p>
-            <strong>File size:</strong>
-            {{ document.file_size }} bytes
-        </p>
-
-        <p>
-            <strong>Uploaded:</strong>
-            {{ document.created_at }}
-        </p>
-
-        {% if document.status != "verified" %}
-            <form
-                method="post"
-                action="{% url 'document-approve-page' document.pk %}"
-            >
-                {% csrf_token %}
-                <button type="submit">
-                    Approve document
-                </button>
-            </form>
+        {% if document.status == "verified" %}
+            <div class="status-badge ok">
+                <span class="dot"></span>
+                Проверен
+            </div>
+        {% elif document.status == "uploaded" or document.status == "ocr_processing" %}
+            <div class="status-badge processing">
+                <span class="dot"></span>
+                В обработке
+            </div>
+        {% elif document.status == "ocr_completed" and not check_results %}
+            <div class="status-badge processing">
+                <span class="dot"></span>
+                В обработке
+            </div>
+        {% elif document.status == "error" or decision == "risk" or decision == "manual_review" %}
+            <div class="status-badge danger">
+                <span class="dot"></span>
+                Высокий риск
+            </div>
+        {% elif decision == "warning" %}
+            <div class="status-badge warning">
+                <span class="dot"></span>
+                Требует внимания
+            </div>
+        {% elif decision == "ok" %}
+            <div class="status-badge ok">
+                <span class="dot"></span>
+                Проверен
+            </div>
         {% else %}
-            <p>
-                <strong>Document approved.</strong>
-            </p>
+            <div class="status-badge processing">
+                <span class="dot"></span>
+                В обработке
+            </div>
         {% endif %}
-    </section>
 
-    <section>
-        <h2>Risk report</h2>
+        <section class="panel">
+            <h2 class="panel-title">
+                Итог проверки
+            </h2>
 
-        <p>
-            <strong>Risk score:</strong>
-            {{ risk_score }}
-        </p>
+            {% if document.status == "verified" %}
+                <p class="panel-text">
+                    Документ утверждён бухгалтером.
+                </p>
+                <p class="panel-text-muted">
+                    Бухгалтер подтвердил документ после проверки. Дальнейшие действия не требуются.
+                </p>
+            {% elif document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
+                <p class="panel-text">
+                    Документ ещё проходит автоматическую обработку.
+                </p>
+                <p class="panel-text-muted">
+                    Распознавание и проверка по правилам выполняются. Обновите страницу через некоторое время.
+                </p>
+            {% elif document.status == "error" %}
+                <p class="panel-text">
+                    Обработка документа завершилась с ошибкой.
+                </p>
+                <p class="panel-text-muted">
+                    Автоматическая проверка не может быть завершена. Изучите причины ниже.
+                </p>
+            {% elif decision == "ok" %}
+                <p class="panel-text">
+                    Без существенных рисков.
+                </p>
+                <p class="panel-text-muted">
+                    Система не выявила проблем, препятствующих автоматическому принятию документа.
+                </p>
+            {% elif decision == "warning" %}
+                <p class="panel-text">
+                    Есть замечания, требующие внимания.
+                </p>
+                <p class="panel-text-muted">
+                    Документ можно принять после проверки указанных замечаний.
+                </p>
+            {% elif decision == "risk" %}
+                <p class="panel-text">
+                    Высокий риск
+                </p>
+                <p class="panel-text-muted">
+                    Документ нельзя принять автоматически. Необходима ручная проверка всех выявленных проблем.
+                </p>
+            {% elif decision == "manual_review" %}
+                <p class="panel-text">
+                    Высокий риск
+                </p>
+                <p class="panel-text-muted">
+                    Совокупный уровень риска слишком высок. Документ требует детальной ручной проверки бухгалтером.
+                </p>
+            {% endif %}
 
-        <p>
-            <strong>Decision:</strong>
-            {{ decision }}
-        </p>
-    </section>
+            {% if risk_score %}
+                <p class="panel-text-muted">
+                    Оценка риска: {{ risk_score }}
+                </p>
+            {% endif %}
+        </section>
 
-    <section>
-        <h2>Extracted fields</h2>
+        <section class="panel">
+            <h2 class="panel-title">
+                {% if document.status == "verified" %}
+                    Что показала проверка
+                {% else %}
+                    Почему возник риск
+                {% endif %}
+            </h2>
 
-        {% if document_fields %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>Value</th>
-                        <th>Confidence</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for field in document_fields %}
-                        <tr>
-                            <td>{{ field.field_name }}</td>
-                            <td>
-                                {% if field.is_manually_corrected %}
-                                    {{ field.corrected_value }}
-                                {% else %}
-                                    {{ field.normalized_value }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if field.confidence is not None %}
-                                    {{ field.confidence }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No extracted fields.</p>
-        {% endif %}
-    </section>
-
-    <section>
-        <h2>Checks</h2>
-
-        {% if check_results %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Rule</th>
-                        <th>Status</th>
-                        <th>Severity</th>
-                        <th>Score</th>
-                        <th>Explanation</th>
-                    </tr>
-                </thead>
-                <tbody>
+            {% if document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
+                <p class="empty-note">
+                    Проверка ещё выполняется. Список проблем появится после завершения обработки.
+                </p>
+            {% elif document.status == "error" and ocr_result and ocr_result.error_message %}
+                <ul class="issue-list">
+                    <li class="issue-item">
+                        <p class="issue-explanation">
+                            {{ ocr_result.error_message }}
+                        </p>
+                    </li>
+                </ul>
+            {% else %}
+                <ul class="issue-list">
                     {% for result in check_results %}
-                        <tr>
-                            <td>{{ result.rule_id }}</td>
-                            <td>{{ result.get_status_display }}</td>
-                            <td>{{ result.severity }}</td>
-                            <td>{{ result.score }}</td>
-                            <td>{{ result.explanation }}</td>
-                        </tr>
+                        {% if result.status == "failed" or result.status == "warning" %}
+                            <li class="issue-item">
+                                <div class="issue-header">
+                                    {% if result.severity == "high" %}
+                                        <span class="issue-severity high">
+                                            ВЫСОКИЙ
+                                        </span>
+                                    {% elif result.severity == "medium" %}
+                                        <span class="issue-severity medium">
+                                            {{ result.severity }}
+                                        </span>
+                                    {% else %}
+                                        <span class="issue-severity low">
+                                            {{ result.severity }}
+                                        </span>
+                                    {% endif %}
+                                    {% if result.score %}
+                                        <span class="issue-score">
+                                            +{{ result.score }} к оценке риска
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                {% if result.rule_id == "R001" %}
+                                    <p class="issue-rule-name">Проверка формата файла</p>
+                                {% elif result.rule_id == "R002" %}
+                                    <p class="issue-rule-name">Проверка целостности файла</p>
+                                {% elif result.rule_id == "R003" %}
+                                    <p class="issue-rule-name">Проверка качества OCR</p>
+                                {% elif result.rule_id == "R004" %}
+                                    <p class="issue-rule-name">Проверка обязательных полей</p>
+                                {% elif result.rule_id == "R005" %}
+                                    <p class="issue-rule-name">Проверка поставщика</p>
+                                {% elif result.rule_id == "R006" %}
+                                    <p class="issue-rule-name">Проверка дубликата файла</p>
+                                {% elif result.rule_id == "R007" %}
+                                    <p class="issue-rule-name">Проверка дубликата документа</p>
+                                {% elif result.rule_id == "R008" %}
+                                    <p class="issue-rule-name">Проверка суммы</p>
+                                {% elif result.rule_id == "R009" %}
+                                    <p class="issue-rule-name">Проверка даты</p>
+                                {% elif result.rule_id == "R010" %}
+                                    <p class="issue-rule-name">Проверка НДС</p>
+                                {% endif %}
+
+                                <p class="issue-explanation">
+                                    {% if result.rule_id == "R001" %}
+                                        {% if result.explanation == "Document file format is not supported." %}
+                                            Формат файла не поддерживается.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R002" %}
+                                        {% if result.explanation == "Document file integrity metadata is invalid." %}
+                                            Некорректные метаданные целостности файла.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R003" %}
+                                        {% if result.explanation == "OCR result is missing." %}
+                                            Результат OCR отсутствует.
+                                        {% elif result.explanation == "OCR processing completed with an error." %}
+                                            OCR завершился с ошибкой.
+                                        {% elif result.explanation == "OCR returned empty text." %}
+                                            OCR не распознал текст в документе.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R004" %}
+                                        {% if result.explanation == "Required document fields are missing." %}
+                                            Не хватает обязательных полей документа.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R005" %}
+                                        {% if result.explanation == "Supplier INN is missing." %}
+                                            Не указан ИНН поставщика.
+                                        {% elif result.explanation == "Supplier was not found in master data." %}
+                                            Поставщик не найден в справочнике компании.
+                                        {% elif result.explanation == "Supplier is inactive." %}
+                                            Поставщик неактивен.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R006" %}
+                                        {% if result.explanation == "Document file hash is missing." %}
+                                            Отсутствует хеш файла документа.
+                                        {% elif result.explanation == "Duplicate file was found." %}
+                                            Найден дубликат файла.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R007" %}
+                                        {% if result.explanation == "Duplicate document check cannot be completed because required fields are missing." %}
+                                            Проверка дубликата документа невозможна: не хватает обязательных полей.
+                                        {% elif result.explanation == "Duplicate document was found." %}
+                                            Найден дубликат документа с совпадающими реквизитами.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R008" %}
+                                        {% if result.explanation == "Total amount is missing." %}
+                                            Не указана сумма документа.
+                                        {% elif result.explanation == "Total amount is empty." %}
+                                            Сумма документа пустая.
+                                        {% elif result.explanation == "Total amount is invalid." %}
+                                            Некорректная сумма документа.
+                                        {% elif result.explanation == "Total amount must be greater than zero." %}
+                                            Сумма документа должна быть больше нуля.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R009" %}
+                                        {% if result.explanation == "Document date is missing." %}
+                                            Не указана дата документа.
+                                        {% elif result.explanation == "Document date is empty." %}
+                                            Дата документа пустая.
+                                        {% elif result.explanation == "Document date is invalid." %}
+                                            Некорректная дата документа.
+                                        {% elif result.explanation == "Document date cannot be in the future." %}
+                                            Дата документа не может быть в будущем.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% elif result.rule_id == "R010" %}
+                                        {% if result.explanation == "Total amount is missing or invalid." %}
+                                            Сумма документа отсутствует или некорректна.
+                                        {% elif result.explanation == "VAT amount is missing or invalid." %}
+                                            Сумма НДС отсутствует или некорректна.
+                                        {% elif result.explanation == "VAT amount cannot be negative." %}
+                                            Сумма НДС не может быть отрицательной.
+                                        {% elif result.explanation == "VAT amount cannot exceed total amount." %}
+                                            Сумма НДС не может превышать сумму документа.
+                                        {% else %}
+                                            {{ result.explanation }}
+                                        {% endif %}
+                                    {% else %}
+                                        {{ result.explanation }}
+                                    {% endif %}
+                                </p>
+
+                                {% if result.actual_value or result.expected_value or result.evidence %}
+                                    <details class="issue-tech-details">
+                                        <summary>
+                                            Технические данные проверки
+                                        </summary>
+                                        <div class="issue-tech-content">
+                                            {% if result.actual_value %}
+                                                <p>
+                                                    Фактическое значение:
+                                                    <pre>{{ result.actual_value }}</pre>
+                                                </p>
+                                            {% endif %}
+                                            {% if result.expected_value %}
+                                                <p>
+                                                    Ожидаемое значение:
+                                                    <pre>{{ result.expected_value }}</pre>
+                                                </p>
+                                            {% endif %}
+                                            {% if result.evidence %}
+                                                <p>
+                                                    Дополнительные данные:
+                                                    <pre>{{ result.evidence }}</pre>
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                    </details>
+                                {% endif %}
+                            </li>
+                        {% endif %}
                     {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No checks available.</p>
-        {% endif %}
-    </section>
+                </ul>
 
-    <section>
-        <h2>OCR</h2>
+                {% if decision == "ok" and document.status != "error" %}
+                    <p class="empty-note">
+                        Проблем не выявлено. Все автоматические проверки пройдены успешно.
+                    </p>
+                {% elif document.status == "error" %}
+                    <p class="empty-note">
+                        Обработка документа завершилась с ошибкой. Подробности см. в разделе OCR.
+                    </p>
+                {% endif %}
+            {% endif %}
+        </section>
 
-        {% if ocr_result %}
-            <p>
-                <strong>Provider:</strong>
-                {{ ocr_result.provider }}
-            </p>
+        <section class="panel">
+            <h2 class="panel-title">
+                Что делать
+            </h2>
 
-            {% if ocr_result.confidence is not None %}
-                <p>
-                    <strong>Confidence:</strong>
-                    {{ ocr_result.confidence }}
+            {% if document.status == "verified" %}
+                <p class="verified-note">
+                    Документ проверен и утверждён.
+                </p>
+            {% elif document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
+                <p class="panel-text">
+                    Дождитесь завершения автоматической обработки, затем вернитесь к этому документу.
+                </p>
+            {% elif document.status == "error" %}
+                <p class="panel-text">
+                    Проверьте качество исходного файла. При необходимости загрузите документ повторно.
+                </p>
+            {% elif decision == "manual_review" or decision == "risk" %}
+                <p class="panel-text">
+                    Не утверждайте документ автоматически. Разберите все выявленные проблемы и примите решение вручную.
+                </p>
+            {% elif decision == "warning" %}
+                <p class="panel-text">
+                    Изучите замечания, сверьте реквизиты документа и примите решение об утверждении.
+                </p>
+            {% else %}
+                <p class="panel-text">
+                    Сверьте основные реквизиты документа и при отсутствии замечаний утвердите его.
                 </p>
             {% endif %}
 
-            {% if ocr_result.processing_time_ms is not None %}
-                <p>
-                    <strong>Processing time:</strong>
-                    {{ ocr_result.processing_time_ms }} ms
+            {% if document.status != "verified" %}
+                <form
+                    method="post"
+                    action="{% url 'document-approve-page' document.pk %}"
+                    style="margin-top: 16px;"
+                >
+                    {% csrf_token %}
+                    <button class="primary-button" type="submit">
+                        Утвердить документ
+                    </button>
+                </form>
+            {% endif %}
+
+            <div class="action-links">
+                <a
+                    class="secondary-link"
+                    href="{% url 'document-list-page' %}"
+                >
+                    К списку документов
+                </a>
+                <a
+                    class="secondary-link"
+                    href="{% url 'document-upload' %}"
+                >
+                    Загрузить другой документ
+                </a>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2 class="panel-title">
+                Основные реквизиты
+            </h2>
+
+            {% if document_fields %}
+                <div class="fields-grid">
+                    {% for field in document_fields %}
+                        {% if field.field_name == "document_type" %}
+                            <div class="field-item">
+                                <span class="field-label">Тип документа</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for field in document_fields %}
+                        {% if field.field_name == "supplier_name" %}
+                            <div class="field-item">
+                                <span class="field-label">Поставщик</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for field in document_fields %}
+                        {% if field.field_name == "supplier_inn" %}
+                            <div class="field-item">
+                                <span class="field-label">ИНН поставщика</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for field in document_fields %}
+                        {% if field.field_name == "document_number" %}
+                            <div class="field-item">
+                                <span class="field-label">Номер документа</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for field in document_fields %}
+                        {% if field.field_name == "document_date" %}
+                            <div class="field-item">
+                                <span class="field-label">Дата документа</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for field in document_fields %}
+                        {% if field.field_name == "currency" %}
+                            <div class="field-item">
+                                <span class="field-label">Валюта</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for field in document_fields %}
+                        {% if field.field_name == "total_amount" %}
+                            <div class="field-item">
+                                <span class="field-label">Сумма</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for field in document_fields %}
+                        {% if field.field_name == "vat_amount" %}
+                            <div class="field-item">
+                                <span class="field-label">Сумма НДС</span>
+                                <span class="field-value">
+                                    {% if field.is_manually_corrected %}
+                                        {{ field.corrected_value }}
+                                    {% else %}
+                                        {{ field.normalized_value|default:"—" }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <details class="details-block">
+                    <summary>
+                        Все извлечённые поля
+                    </summary>
+                    <div class="details-content">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Поле</th>
+                                    <th>Значение</th>
+                                    <th>Уверенность</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field in document_fields %}
+                                    <tr>
+                                        <td>{{ field.field_name }}</td>
+                                        <td>
+                                            {% if field.is_manually_corrected %}
+                                                {{ field.corrected_value }}
+                                            {% else %}
+                                                {{ field.normalized_value }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if field.confidence is not None %}
+                                                {{ field.confidence }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            {% else %}
+                <p class="empty-note">
+                    Реквизиты ещё не извлечены.
                 </p>
             {% endif %}
+        </section>
 
-            {% if ocr_result.raw_text %}
-                <h3>Recognized text</h3>
-                <pre>{{ ocr_result.raw_text }}</pre>
-            {% endif %}
+        <details class="details-block">
+            <summary>
+                Все проверки
+            </summary>
+            <div class="details-content">
+                {% if check_results %}
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Правило</th>
+                                <th>Статус</th>
+                                <th>Серьёзность</th>
+                                <th>Балл</th>
+                                <th>Объяснение</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in check_results %}
+                                <tr>
+                                    <td>{{ result.rule_id }}</td>
+                                    <td>{{ result.get_status_display }}</td>
+                                    <td>{{ result.severity }}</td>
+                                    <td>{{ result.score }}</td>
+                                    <td>{{ result.explanation }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="empty-note">
+                        Результаты проверок пока недоступны.
+                    </p>
+                {% endif %}
+            </div>
+        </details>
 
-            {% if ocr_result.error_message %}
-                <h3>OCR error</h3>
-                <p>{{ ocr_result.error_message }}</p>
-            {% endif %}
-        {% else %}
-            <p>No OCR result.</p>
-        {% endif %}
-    </section>
+        <details class="details-block">
+            <summary>
+                OCR и технические данные
+            </summary>
+            <div class="details-content">
+                <p class="tech-meta">
+                    Размер файла: {{ document.file_size }} байт
+                </p>
+
+                {% if ocr_result %}
+                    <p class="tech-meta">
+                        Провайдер OCR: {{ ocr_result.provider }}
+                    </p>
+
+                    {% if ocr_result.confidence is not None %}
+                        <p class="tech-meta">
+                            Уверенность OCR: {{ ocr_result.confidence }}
+                        </p>
+                    {% endif %}
+
+                    {% if ocr_result.processing_time_ms is not None %}
+                        <p class="tech-meta">
+                            Время обработки: {{ ocr_result.processing_time_ms }} мс
+                        </p>
+                    {% endif %}
+
+                    {% if ocr_result.error_message %}
+                        <p class="tech-meta" style="color: var(--red);">
+                            Ошибка OCR: {{ ocr_result.error_message }}
+                        </p>
+                    {% endif %}
+
+                    {% if ocr_result.raw_text %}
+                        <h3 class="panel-title" style="margin-top: 16px;">
+                            Распознанный текст
+                        </h3>
+                        <pre class="ocr-text">{{ ocr_result.raw_text }}</pre>
+                    {% endif %}
+                {% else %}
+                    <p class="empty-note">
+                        Данные OCR пока недоступны.
+                    </p>
+                {% endif %}
+            </div>
+        </details>
+    </main>
 </body>
 </html>

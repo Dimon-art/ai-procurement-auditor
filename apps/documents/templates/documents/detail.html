@@ -1,9 +1,9 @@
-п»ї<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ document.filename }} вЂ” AI Procurement Auditor</title>
+    <title>{{ document.filename }} — AI Procurement Auditor</title>
 
     <style>
         :root {
@@ -20,6 +20,10 @@
             --purple: #6b21a8;
             --purple-light: #f5f3ff;
             --purple-border: #ddd6fe;
+
+            --gray: #6b7280;
+            --gray-light: #f3f4f6;
+            --gray-border: #e5e7eb;
 
             --text: #1f2937;
             --muted: #6b7280;
@@ -160,6 +164,130 @@
             background: var(--red);
         }
 
+        .doc-path {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .doc-path-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            position: relative;
+            padding-bottom: 14px;
+        }
+
+        .doc-path-step:last-child {
+            padding-bottom: 0;
+        }
+
+        .doc-path-step:not(:last-child)::before {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 18px;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .doc-path-marker {
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 2px solid var(--gray-border);
+            background: var(--gray-light);
+            z-index: 1;
+        }
+
+        .doc-path-body {
+            min-width: 0;
+        }
+
+        .doc-path-label {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .doc-path-hint {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .doc-path-step.pending .doc-path-marker {
+            background: var(--gray-light);
+            border-color: #d1d5db;
+        }
+
+        .doc-path-step.pending .doc-path-label {
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .doc-path-step.active .doc-path-marker {
+            background: var(--purple-light);
+            border-color: var(--purple);
+        }
+
+        .doc-path-step.active .doc-path-label {
+            color: var(--purple);
+        }
+
+        .doc-path-step.done .doc-path-marker {
+            background: #16a34a;
+            border-color: #16a34a;
+        }
+
+        .doc-path-step.done .doc-path-label {
+            color: var(--green);
+        }
+
+        .doc-path-step.warning .doc-path-marker {
+            background: #ca8a04;
+            border-color: #ca8a04;
+        }
+
+        .doc-path-step.warning .doc-path-label {
+            color: var(--yellow);
+        }
+
+        .doc-path-step.danger .doc-path-marker {
+            background: var(--red);
+            border-color: var(--red);
+        }
+
+        .doc-path-step.danger .doc-path-label {
+            color: var(--red);
+        }
+
+        .doc-path-step .doc-path-hint-warn,
+        .doc-path-step .doc-path-hint-fail {
+            display: none;
+        }
+
+        .doc-path-step.warning .doc-path-hint-ok,
+        .doc-path-step.danger .doc-path-hint-ok {
+            display: none;
+        }
+
+        .doc-path-step.warning:not(.danger) .doc-path-hint-warn {
+            display: block;
+        }
+
+        .doc-path-step.danger .doc-path-hint-warn {
+            display: none;
+        }
+
+        .doc-path-step.danger .doc-path-hint-fail {
+            display: block;
+        }
+
         .panel {
             margin-top: 24px;
             padding: 24px;
@@ -281,11 +409,11 @@
         }
 
         .issue-tech-details summary::before {
-            content: "в–ё ";
+            content: "? ";
         }
 
         .issue-tech-details[open] summary::before {
-            content: "в–ѕ ";
+            content: "? ";
         }
 
         .issue-tech-content {
@@ -409,12 +537,12 @@
         }
 
         .details-block summary::before {
-            content: "в–ё ";
+            content: "? ";
             color: var(--muted);
         }
 
         .details-block[open] summary::before {
-            content: "в–ѕ ";
+            content: "? ";
         }
 
         .details-content {
@@ -499,7 +627,7 @@
             class="back-link"
             href="{% url 'document-list-page' %}"
         >
-            в†ђ Рљ РґРѕРєСѓРјРµРЅС‚Р°Рј
+            < К документам
         </a>
     </header>
 
@@ -509,121 +637,370 @@
         </h1>
 
         <p class="page-meta">
-            Р—Р°РіСЂСѓР¶РµРЅ {{ document.created_at|date:"d.m.Y H:i" }}
+            Загружен {{ document.created_at|date:"d.m.Y H:i" }}
         </p>
 
-        {% if document.status == "verified" %}
-            <div class="status-badge ok">
-                <span class="dot"></span>
-                РџСЂРѕРІРµСЂРµРЅ
-            </div>
-        {% elif document.status == "uploaded" or document.status == "ocr_processing" %}
+        {% if document.status == "uploaded" or document.status == "ocr_processing" %}
             <div class="status-badge processing">
                 <span class="dot"></span>
-                Р’ РѕР±СЂР°Р±РѕС‚РєРµ
+                В обработке
             </div>
         {% elif document.status == "ocr_completed" and not check_results %}
             <div class="status-badge processing">
                 <span class="dot"></span>
-                Р’ РѕР±СЂР°Р±РѕС‚РєРµ
+                В обработке
             </div>
-        {% elif document.status == "error" or decision == "risk" or decision == "manual_review" %}
+        {% elif document.status == "error" %}
             <div class="status-badge danger">
                 <span class="dot"></span>
-                Р’С‹СЃРѕРєРёР№ СЂРёСЃРє
+                Ошибка обработки
+            </div>
+        {% elif decision == "risk" or decision == "manual_review" %}
+            <div class="status-badge danger">
+                <span class="dot"></span>
+                Высокий риск
             </div>
         {% elif decision == "warning" %}
             <div class="status-badge warning">
                 <span class="dot"></span>
-                РўСЂРµР±СѓРµС‚ РІРЅРёРјР°РЅРёСЏ
+                Требует внимания
             </div>
         {% elif decision == "ok" %}
             <div class="status-badge ok">
                 <span class="dot"></span>
-                РџСЂРѕРІРµСЂРµРЅ
+                Проверка пройдена
             </div>
         {% else %}
             <div class="status-badge processing">
                 <span class="dot"></span>
-                Р’ РѕР±СЂР°Р±РѕС‚РєРµ
+                В обработке
             </div>
         {% endif %}
 
         <section class="panel">
             <h2 class="panel-title">
-                РС‚РѕРі РїСЂРѕРІРµСЂРєРё
+                Путь документа
             </h2>
 
-            {% if document.status == "verified" %}
+            <ol class="doc-path">
+                <li class="doc-path-step done">
+                    <span class="doc-path-marker" aria-hidden="true"></span>
+                    <div class="doc-path-body">
+                        <p class="doc-path-label">Загрузка</p>
+                        <p class="doc-path-hint">Документ принят системой</p>
+                    </div>
+                </li>
+
+                {% if document.status == "error" or ocr_result.error_message %}
+                    <li class="doc-path-step danger">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Обработка / OCR</p>
+                            <p class="doc-path-hint">Распознавание завершилось с ошибкой</p>
+                        </div>
+                    </li>
+                {% elif document.status == "uploaded" or document.status == "ocr_processing" %}
+                    <li class="doc-path-step active">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Обработка / OCR</p>
+                            <p class="doc-path-hint">Система распознаёт документ</p>
+                        </div>
+                    </li>
+                {% elif ocr_result or document.status == "ocr_completed" or document.status == "verified" %}
+                    <li class="doc-path-step done">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Обработка / OCR</p>
+                            <p class="doc-path-hint">Распознавание выполнено</p>
+                        </div>
+                    </li>
+                {% else %}
+                    <li class="doc-path-step pending">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Обработка / OCR</p>
+                            <p class="doc-path-hint">Ещё не начато</p>
+                        </div>
+                    </li>
+                {% endif %}
+
+                {% if document_fields %}
+                    <li class="doc-path-step done">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Извлечение данных</p>
+                            <p class="doc-path-hint">Реквизиты извлечены</p>
+                        </div>
+                    </li>
+                {% elif document.status == "error" %}
+                    <li class="doc-path-step pending">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Извлечение данных</p>
+                            <p class="doc-path-hint">Не выполнено из?за ошибки</p>
+                        </div>
+                    </li>
+                {% elif document.status == "ocr_processing" or document.status == "ocr_completed" or ocr_result %}
+                    <li class="doc-path-step active">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Извлечение данных</p>
+                            <p class="doc-path-hint">Система извлекает реквизиты</p>
+                        </div>
+                    </li>
+                {% else %}
+                    <li class="doc-path-step pending">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Извлечение данных</p>
+                            <p class="doc-path-hint">Ещё не начато</p>
+                        </div>
+                    </li>
+                {% endif %}
+
+                {% if check_results %}
+                    {% regroup check_results by status as doc_path_rules_by_status %}
+                    {% for group in doc_path_rules_by_status %}
+                        {% if group.grouper == "failed" %}
+                            {% cycle "yes" as doc_path_rules_failed silent %}
+                        {% endif %}
+                        {% if group.grouper == "warning" %}
+                            {% cycle "yes" as doc_path_rules_warned silent %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if doc_path_rules_failed %}
+                        <li class="doc-path-step danger">
+                            <span class="doc-path-marker" aria-hidden="true"></span>
+                            <div class="doc-path-body">
+                                <p class="doc-path-label">Проверка правил</p>
+                                <p class="doc-path-hint">Есть нарушения правил</p>
+                            </div>
+                        </li>
+                    {% elif doc_path_rules_warned %}
+                        <li class="doc-path-step warning">
+                            <span class="doc-path-marker" aria-hidden="true"></span>
+                            <div class="doc-path-body">
+                                <p class="doc-path-label">Проверка правил</p>
+                                <p class="doc-path-hint">Есть замечания по правилам</p>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="doc-path-step done">
+                            <span class="doc-path-marker" aria-hidden="true"></span>
+                            <div class="doc-path-body">
+                                <p class="doc-path-label">Проверка правил</p>
+                                <p class="doc-path-hint">Все правила пройдены</p>
+                            </div>
+                        </li>
+                    {% endif %}
+                {% elif document.status == "error" %}
+                    <li class="doc-path-step pending">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Проверка правил</p>
+                            <p class="doc-path-hint">Не выполнено из?за ошибки</p>
+                        </div>
+                    </li>
+                {% elif document.status == "ocr_completed" or document_fields %}
+                    <li class="doc-path-step active">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Проверка правил</p>
+                            <p class="doc-path-hint">Система проверяет документ по правилам</p>
+                        </div>
+                    </li>
+                {% else %}
+                    <li class="doc-path-step pending">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Проверка правил</p>
+                            <p class="doc-path-hint">Ещё не начато</p>
+                        </div>
+                    </li>
+                {% endif %}
+
+                {% if document.status == "error" %}
+                    <li class="doc-path-step danger">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Оценка риска</p>
+                            <p class="doc-path-hint">Оценка недоступна из?за ошибки обработки</p>
+                        </div>
+                    </li>
+                {% elif check_results and decision == "ok" %}
+                    <li class="doc-path-step done">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Оценка риска</p>
+                            <p class="doc-path-hint">Существенных рисков не выявлено</p>
+                        </div>
+                    </li>
+                {% elif check_results and decision == "warning" %}
+                    <li class="doc-path-step warning">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Оценка риска</p>
+                            <p class="doc-path-hint">Есть замечания, требующие внимания</p>
+                        </div>
+                    </li>
+                {% elif check_results and decision == "risk" %}
+                    <li class="doc-path-step danger">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Оценка риска</p>
+                            <p class="doc-path-hint">Выявлен высокий уровень риска</p>
+                        </div>
+                    </li>
+                {% elif check_results and decision == "manual_review" %}
+                    <li class="doc-path-step danger">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Оценка риска</p>
+                            <p class="doc-path-hint">Выявлен высокий уровень риска</p>
+                        </div>
+                    </li>
+                {% elif check_results %}
+                    <li class="doc-path-step active">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Оценка риска</p>
+                            <p class="doc-path-hint">Оценка риска выполняется</p>
+                        </div>
+                    </li>
+                {% else %}
+                    <li class="doc-path-step pending">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Оценка риска</p>
+                            <p class="doc-path-hint">Ещё не начато</p>
+                        </div>
+                    </li>
+                {% endif %}
+
+                {% if document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
+                    <li class="doc-path-step active">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Итог</p>
+                            <p class="doc-path-hint">Ожидается завершение обработки</p>
+                        </div>
+                    </li>
+                {% elif document.status == "error" %}
+                    <li class="doc-path-step danger">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Итог</p>
+                            <p class="doc-path-hint">Обработка завершилась с ошибкой</p>
+                        </div>
+                    </li>
+                {% elif decision == "ok" %}
+                    <li class="doc-path-step done">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Итог</p>
+                            <p class="doc-path-hint">Проверка пройдена</p>
+                        </div>
+                    </li>
+                {% elif decision == "warning" %}
+                    <li class="doc-path-step warning">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Итог</p>
+                            <p class="doc-path-hint">Требует внимания проверяющего</p>
+                        </div>
+                    </li>
+                {% elif decision == "risk" or decision == "manual_review" %}
+                    <li class="doc-path-step danger">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Итог</p>
+                            <p class="doc-path-hint">Высокий риск — нужна ручная проверка</p>
+                        </div>
+                    </li>
+                {% else %}
+                    <li class="doc-path-step pending">
+                        <span class="doc-path-marker" aria-hidden="true"></span>
+                        <div class="doc-path-body">
+                            <p class="doc-path-label">Итог</p>
+                            <p class="doc-path-hint">Ещё не сформирован</p>
+                        </div>
+                    </li>
+                {% endif %}
+            </ol>
+        </section>
+
+        <section class="panel">
+            <h2 class="panel-title">
+                Итог проверки
+            </h2>
+
+            {% if document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
                 <p class="panel-text">
-                    Р”РѕРєСѓРјРµРЅС‚ СѓС‚РІРµСЂР¶РґС‘РЅ Р±СѓС…РіР°Р»С‚РµСЂРѕРј.
+                    Документ ещё проходит автоматическую обработку.
                 </p>
                 <p class="panel-text-muted">
-                    Р‘СѓС…РіР°Р»С‚РµСЂ РїРѕРґС‚РІРµСЂРґРёР» РґРѕРєСѓРјРµРЅС‚ РїРѕСЃР»Рµ РїСЂРѕРІРµСЂРєРё. Р”Р°Р»СЊРЅРµР№С€РёРµ РґРµР№СЃС‚РІРёСЏ РЅРµ С‚СЂРµР±СѓСЋС‚СЃСЏ.
-                </p>
-            {% elif document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
-                <p class="panel-text">
-                    Р”РѕРєСѓРјРµРЅС‚ РµС‰С‘ РїСЂРѕС…РѕРґРёС‚ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєСѓСЋ РѕР±СЂР°Р±РѕС‚РєСѓ.
-                </p>
-                <p class="panel-text-muted">
-                    Р Р°СЃРїРѕР·РЅР°РІР°РЅРёРµ Рё РїСЂРѕРІРµСЂРєР° РїРѕ РїСЂР°РІРёР»Р°Рј РІС‹РїРѕР»РЅСЏСЋС‚СЃСЏ. РћР±РЅРѕРІРёС‚Рµ СЃС‚СЂР°РЅРёС†Сѓ С‡РµСЂРµР· РЅРµРєРѕС‚РѕСЂРѕРµ РІСЂРµРјСЏ.
+                    Ожидается завершение проверки. Обновите страницу через некоторое время.
                 </p>
             {% elif document.status == "error" %}
                 <p class="panel-text">
-                    РћР±СЂР°Р±РѕС‚РєР° РґРѕРєСѓРјРµРЅС‚Р° Р·Р°РІРµСЂС€РёР»Р°СЃСЊ СЃ РѕС€РёР±РєРѕР№.
+                    Обработка документа завершилась с ошибкой.
                 </p>
                 <p class="panel-text-muted">
-                    РђРІС‚РѕРјР°С‚РёС‡РµСЃРєР°СЏ РїСЂРѕРІРµСЂРєР° РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ Р·Р°РІРµСЂС€РµРЅР°. РР·СѓС‡РёС‚Рµ РїСЂРёС‡РёРЅС‹ РЅРёР¶Рµ.
+                    Автоматическая проверка не может быть завершена. Изучите причины ниже.
                 </p>
             {% elif decision == "ok" %}
                 <p class="panel-text">
-                    Р‘РµР· СЃСѓС‰РµСЃС‚РІРµРЅРЅС‹С… СЂРёСЃРєРѕРІ.
+                    Без существенных рисков.
                 </p>
                 <p class="panel-text-muted">
-                    РЎРёСЃС‚РµРјР° РЅРµ РІС‹СЏРІРёР»Р° РїСЂРѕР±Р»РµРј, РїСЂРµРїСЏС‚СЃС‚РІСѓСЋС‰РёС… Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРјСѓ РїСЂРёРЅСЏС‚РёСЋ РґРѕРєСѓРјРµРЅС‚Р°.
+                    Автоматическая проверка завершена. Система не выявила проблем, препятствующих принятию документа.
                 </p>
             {% elif decision == "warning" %}
                 <p class="panel-text">
-                    Р•СЃС‚СЊ Р·Р°РјРµС‡Р°РЅРёСЏ, С‚СЂРµР±СѓСЋС‰РёРµ РІРЅРёРјР°РЅРёСЏ.
+                    Есть замечания, требующие внимания.
                 </p>
                 <p class="panel-text-muted">
-                    Р”РѕРєСѓРјРµРЅС‚ РјРѕР¶РЅРѕ РїСЂРёРЅСЏС‚СЊ РїРѕСЃР»Рµ РїСЂРѕРІРµСЂРєРё СѓРєР°Р·Р°РЅРЅС‹С… Р·Р°РјРµС‡Р°РЅРёР№.
+                    Автоматическая проверка завершена. Документ можно принять после проверки указанных замечаний.
                 </p>
             {% elif decision == "risk" %}
                 <p class="panel-text">
-                    Р’С‹СЃРѕРєРёР№ СЂРёСЃРє
+                    Высокий риск
                 </p>
                 <p class="panel-text-muted">
-                    Р”РѕРєСѓРјРµРЅС‚ РЅРµР»СЊР·СЏ РїСЂРёРЅСЏС‚СЊ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё. РќРµРѕР±С…РѕРґРёРјР° СЂСѓС‡РЅР°СЏ РїСЂРѕРІРµСЂРєР° РІСЃРµС… РІС‹СЏРІР»РµРЅРЅС‹С… РїСЂРѕР±Р»РµРј.
+                    Автоматическая проверка завершена. Документ нельзя принять автоматически — нужна ручная проверка выявленных проблем.
                 </p>
             {% elif decision == "manual_review" %}
                 <p class="panel-text">
-                    Р’С‹СЃРѕРєРёР№ СЂРёСЃРє
+                    Высокий риск
                 </p>
                 <p class="panel-text-muted">
-                    РЎРѕРІРѕРєСѓРїРЅС‹Р№ СѓСЂРѕРІРµРЅСЊ СЂРёСЃРєР° СЃР»РёС€РєРѕРј РІС‹СЃРѕРє. Р”РѕРєСѓРјРµРЅС‚ С‚СЂРµР±СѓРµС‚ РґРµС‚Р°Р»СЊРЅРѕР№ СЂСѓС‡РЅРѕР№ РїСЂРѕРІРµСЂРєРё Р±СѓС…РіР°Р»С‚РµСЂРѕРј.
+                    Автоматическая проверка завершена. Совокупный уровень риска слишком высок — требуется детальная ручная проверка.
                 </p>
             {% endif %}
 
-            {% if risk_score %}
+            {% if document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
+            {% elif check_results or document.status == "verified" or document.status == "error" %}
                 <p class="panel-text-muted">
-                    РћС†РµРЅРєР° СЂРёСЃРєР°: {{ risk_score }}
+                    Оценка риска: {{ risk_score }}
                 </p>
             {% endif %}
         </section>
 
         <section class="panel">
             <h2 class="panel-title">
-                {% if document.status == "verified" %}
-                    Р§С‚Рѕ РїРѕРєР°Р·Р°Р»Р° РїСЂРѕРІРµСЂРєР°
+                {% if document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
+                    Почему возник риск
+                {% elif document.status == "error" or decision == "warning" or decision == "risk" or decision == "manual_review" %}
+                    Почему возник риск
                 {% else %}
-                    РџРѕС‡РµРјСѓ РІРѕР·РЅРёРє СЂРёСЃРє
+                    Что показала проверка
                 {% endif %}
             </h2>
 
             {% if document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
                 <p class="empty-note">
-                    РџСЂРѕРІРµСЂРєР° РµС‰С‘ РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ. РЎРїРёСЃРѕРє РїСЂРѕР±Р»РµРј РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ РѕР±СЂР°Р±РѕС‚РєРё.
+                    Проверка ещё выполняется. Список проблем появится после завершения обработки.
                 </p>
             {% elif document.status == "error" and ocr_result and ocr_result.error_message %}
                 <ul class="issue-list">
@@ -641,7 +1018,7 @@
                                 <div class="issue-header">
                                     {% if result.severity == "high" %}
                                         <span class="issue-severity high">
-                                            Р’Р«РЎРћРљРР™
+                                            ВЫСОКИЙ
                                         </span>
                                     {% elif result.severity == "medium" %}
                                         <span class="issue-severity medium">
@@ -654,121 +1031,121 @@
                                     {% endif %}
                                     {% if result.score %}
                                         <span class="issue-score">
-                                            +{{ result.score }} Рє РѕС†РµРЅРєРµ СЂРёСЃРєР°
+                                            +{{ result.score }} к оценке риска
                                         </span>
                                     {% endif %}
                                 </div>
 
                                 {% if result.rule_id == "R001" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° С„РѕСЂРјР°С‚Р° С„Р°Р№Р»Р°</p>
+                                    <p class="issue-rule-name">Проверка формата файла</p>
                                 {% elif result.rule_id == "R002" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° С†РµР»РѕСЃС‚РЅРѕСЃС‚Рё С„Р°Р№Р»Р°</p>
+                                    <p class="issue-rule-name">Проверка целостности файла</p>
                                 {% elif result.rule_id == "R003" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° РєР°С‡РµСЃС‚РІР° OCR</p>
+                                    <p class="issue-rule-name">Проверка качества OCR</p>
                                 {% elif result.rule_id == "R004" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С… РїРѕР»РµР№</p>
+                                    <p class="issue-rule-name">Проверка обязательных полей</p>
                                 {% elif result.rule_id == "R005" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° РїРѕСЃС‚Р°РІС‰РёРєР°</p>
+                                    <p class="issue-rule-name">Проверка поставщика</p>
                                 {% elif result.rule_id == "R006" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° РґСѓР±Р»РёРєР°С‚Р° С„Р°Р№Р»Р°</p>
+                                    <p class="issue-rule-name">Проверка дубликата файла</p>
                                 {% elif result.rule_id == "R007" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° РґСѓР±Р»РёРєР°С‚Р° РґРѕРєСѓРјРµРЅС‚Р°</p>
+                                    <p class="issue-rule-name">Проверка дубликата документа</p>
                                 {% elif result.rule_id == "R008" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° СЃСѓРјРјС‹</p>
+                                    <p class="issue-rule-name">Проверка суммы</p>
                                 {% elif result.rule_id == "R009" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° РґР°С‚С‹</p>
+                                    <p class="issue-rule-name">Проверка даты</p>
                                 {% elif result.rule_id == "R010" %}
-                                    <p class="issue-rule-name">РџСЂРѕРІРµСЂРєР° РќР”РЎ</p>
+                                    <p class="issue-rule-name">Проверка НДС</p>
                                 {% endif %}
 
                                 <p class="issue-explanation">
                                     {% if result.rule_id == "R001" %}
                                         {% if result.explanation == "Document file format is not supported." %}
-                                            Р¤РѕСЂРјР°С‚ С„Р°Р№Р»Р° РЅРµ РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ.
+                                            Формат файла не поддерживается.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R002" %}
                                         {% if result.explanation == "Document file integrity metadata is invalid." %}
-                                            РќРµРєРѕСЂСЂРµРєС‚РЅС‹Рµ РјРµС‚Р°РґР°РЅРЅС‹Рµ С†РµР»РѕСЃС‚РЅРѕСЃС‚Рё С„Р°Р№Р»Р°.
+                                            Некорректные метаданные целостности файла.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R003" %}
                                         {% if result.explanation == "OCR result is missing." %}
-                                            Р РµР·СѓР»СЊС‚Р°С‚ OCR РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚.
+                                            Результат OCR отсутствует.
                                         {% elif result.explanation == "OCR processing completed with an error." %}
-                                            OCR Р·Р°РІРµСЂС€РёР»СЃСЏ СЃ РѕС€РёР±РєРѕР№.
+                                            OCR завершился с ошибкой.
                                         {% elif result.explanation == "OCR returned empty text." %}
-                                            OCR РЅРµ СЂР°СЃРїРѕР·РЅР°Р» С‚РµРєСЃС‚ РІ РґРѕРєСѓРјРµРЅС‚Рµ.
+                                            OCR не распознал текст в документе.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R004" %}
                                         {% if result.explanation == "Required document fields are missing." %}
-                                            РќРµ С…РІР°С‚Р°РµС‚ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С… РїРѕР»РµР№ РґРѕРєСѓРјРµРЅС‚Р°.
+                                            Не хватает обязательных полей документа.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R005" %}
                                         {% if result.explanation == "Supplier INN is missing." %}
-                                            РќРµ СѓРєР°Р·Р°РЅ РРќРќ РїРѕСЃС‚Р°РІС‰РёРєР°.
+                                            Не указан ИНН поставщика.
                                         {% elif result.explanation == "Supplier was not found in master data." %}
-                                            РџРѕСЃС‚Р°РІС‰РёРє РЅРµ РЅР°Р№РґРµРЅ РІ СЃРїСЂР°РІРѕС‡РЅРёРєРµ РєРѕРјРїР°РЅРёРё.
+                                            Поставщик не найден в справочнике компании.
                                         {% elif result.explanation == "Supplier is inactive." %}
-                                            РџРѕСЃС‚Р°РІС‰РёРє РЅРµР°РєС‚РёРІРµРЅ.
+                                            Поставщик неактивен.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R006" %}
                                         {% if result.explanation == "Document file hash is missing." %}
-                                            РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ С…РµС€ С„Р°Р№Р»Р° РґРѕРєСѓРјРµРЅС‚Р°.
+                                            Отсутствует хеш файла документа.
                                         {% elif result.explanation == "Duplicate file was found." %}
-                                            РќР°Р№РґРµРЅ РґСѓР±Р»РёРєР°С‚ С„Р°Р№Р»Р°.
+                                            Найден дубликат файла.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R007" %}
                                         {% if result.explanation == "Duplicate document check cannot be completed because required fields are missing." %}
-                                            РџСЂРѕРІРµСЂРєР° РґСѓР±Р»РёРєР°С‚Р° РґРѕРєСѓРјРµРЅС‚Р° РЅРµРІРѕР·РјРѕР¶РЅР°: РЅРµ С…РІР°С‚Р°РµС‚ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹С… РїРѕР»РµР№.
+                                            Проверка дубликата документа невозможна: не хватает обязательных полей.
                                         {% elif result.explanation == "Duplicate document was found." %}
-                                            РќР°Р№РґРµРЅ РґСѓР±Р»РёРєР°С‚ РґРѕРєСѓРјРµРЅС‚Р° СЃ СЃРѕРІРїР°РґР°СЋС‰РёРјРё СЂРµРєРІРёР·РёС‚Р°РјРё.
+                                            Найден дубликат документа с совпадающими реквизитами.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R008" %}
                                         {% if result.explanation == "Total amount is missing." %}
-                                            РќРµ СѓРєР°Р·Р°РЅР° СЃСѓРјРјР° РґРѕРєСѓРјРµРЅС‚Р°.
+                                            Не указана сумма документа.
                                         {% elif result.explanation == "Total amount is empty." %}
-                                            РЎСѓРјРјР° РґРѕРєСѓРјРµРЅС‚Р° РїСѓСЃС‚Р°СЏ.
+                                            Сумма документа пустая.
                                         {% elif result.explanation == "Total amount is invalid." %}
-                                            РќРµРєРѕСЂСЂРµРєС‚РЅР°СЏ СЃСѓРјРјР° РґРѕРєСѓРјРµРЅС‚Р°.
+                                            Некорректная сумма документа.
                                         {% elif result.explanation == "Total amount must be greater than zero." %}
-                                            РЎСѓРјРјР° РґРѕРєСѓРјРµРЅС‚Р° РґРѕР»Р¶РЅР° Р±С‹С‚СЊ Р±РѕР»СЊС€Рµ РЅСѓР»СЏ.
+                                            Сумма документа должна быть больше нуля.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R009" %}
                                         {% if result.explanation == "Document date is missing." %}
-                                            РќРµ СѓРєР°Р·Р°РЅР° РґР°С‚Р° РґРѕРєСѓРјРµРЅС‚Р°.
+                                            Не указана дата документа.
                                         {% elif result.explanation == "Document date is empty." %}
-                                            Р”Р°С‚Р° РґРѕРєСѓРјРµРЅС‚Р° РїСѓСЃС‚Р°СЏ.
+                                            Дата документа пустая.
                                         {% elif result.explanation == "Document date is invalid." %}
-                                            РќРµРєРѕСЂСЂРµРєС‚РЅР°СЏ РґР°С‚Р° РґРѕРєСѓРјРµРЅС‚Р°.
+                                            Некорректная дата документа.
                                         {% elif result.explanation == "Document date cannot be in the future." %}
-                                            Р”Р°С‚Р° РґРѕРєСѓРјРµРЅС‚Р° РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РІ Р±СѓРґСѓС‰РµРј.
+                                            Дата документа не может быть в будущем.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
                                     {% elif result.rule_id == "R010" %}
                                         {% if result.explanation == "Total amount is missing or invalid." %}
-                                            РЎСѓРјРјР° РґРѕРєСѓРјРµРЅС‚Р° РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РёР»Рё РЅРµРєРѕСЂСЂРµРєС‚РЅР°.
+                                            Сумма документа отсутствует или некорректна.
                                         {% elif result.explanation == "VAT amount is missing or invalid." %}
-                                            РЎСѓРјРјР° РќР”РЎ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РёР»Рё РЅРµРєРѕСЂСЂРµРєС‚РЅР°.
+                                            Сумма НДС отсутствует или некорректна.
                                         {% elif result.explanation == "VAT amount cannot be negative." %}
-                                            РЎСѓРјРјР° РќР”РЎ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РѕС‚СЂРёС†Р°С‚РµР»СЊРЅРѕР№.
+                                            Сумма НДС не может быть отрицательной.
                                         {% elif result.explanation == "VAT amount cannot exceed total amount." %}
-                                            РЎСѓРјРјР° РќР”РЎ РЅРµ РјРѕР¶РµС‚ РїСЂРµРІС‹С€Р°С‚СЊ СЃСѓРјРјСѓ РґРѕРєСѓРјРµРЅС‚Р°.
+                                            Сумма НДС не может превышать сумму документа.
                                         {% else %}
                                             {{ result.explanation }}
                                         {% endif %}
@@ -780,24 +1157,24 @@
                                 {% if result.actual_value or result.expected_value or result.evidence %}
                                     <details class="issue-tech-details">
                                         <summary>
-                                            РўРµС…РЅРёС‡РµСЃРєРёРµ РґР°РЅРЅС‹Рµ РїСЂРѕРІРµСЂРєРё
+                                            Технические данные проверки
                                         </summary>
                                         <div class="issue-tech-content">
                                             {% if result.actual_value %}
                                                 <p>
-                                                    Р¤Р°РєС‚РёС‡РµСЃРєРѕРµ Р·РЅР°С‡РµРЅРёРµ:
+                                                    Фактическое значение:
                                                     <pre>{{ result.actual_value }}</pre>
                                                 </p>
                                             {% endif %}
                                             {% if result.expected_value %}
                                                 <p>
-                                                    РћР¶РёРґР°РµРјРѕРµ Р·РЅР°С‡РµРЅРёРµ:
+                                                    Ожидаемое значение:
                                                     <pre>{{ result.expected_value }}</pre>
                                                 </p>
                                             {% endif %}
                                             {% if result.evidence %}
                                                 <p>
-                                                    Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ:
+                                                    Дополнительные данные:
                                                     <pre>{{ result.evidence }}</pre>
                                                 </p>
                                             {% endif %}
@@ -811,11 +1188,11 @@
 
                 {% if decision == "ok" and document.status != "error" %}
                     <p class="empty-note">
-                        РџСЂРѕР±Р»РµРј РЅРµ РІС‹СЏРІР»РµРЅРѕ. Р’СЃРµ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёРµ РїСЂРѕРІРµСЂРєРё РїСЂРѕР№РґРµРЅС‹ СѓСЃРїРµС€РЅРѕ.
+                        Проблем не выявлено. Все автоматические проверки пройдены успешно.
                     </p>
                 {% elif document.status == "error" %}
                     <p class="empty-note">
-                        РћР±СЂР°Р±РѕС‚РєР° РґРѕРєСѓРјРµРЅС‚Р° Р·Р°РІРµСЂС€РёР»Р°СЃСЊ СЃ РѕС€РёР±РєРѕР№. РџРѕРґСЂРѕР±РЅРѕСЃС‚Рё СЃРј. РІ СЂР°Р·РґРµР»Рµ OCR.
+                        Обработка документа завершилась с ошибкой. Подробности см. в разделе OCR.
                     </p>
                 {% endif %}
             {% endif %}
@@ -823,36 +1200,26 @@
 
         <section class="panel">
             <h2 class="panel-title">
-                Р§С‚Рѕ РґРµР»Р°С‚СЊ
+                Что делать
             </h2>
 
-            {% if document.status == "verified" %}
-                <p class="verified-note">
-                    Р”РѕРєСѓРјРµРЅС‚ РїСЂРѕРІРµСЂРµРЅ Рё СѓС‚РІРµСЂР¶РґС‘РЅ.
-                </p>
-            {% elif document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
+            {% if document.status == "uploaded" or document.status == "ocr_processing" or document.status == "ocr_completed" and not check_results %}
                 <p class="panel-text">
-                    Р”РѕР¶РґРёС‚РµСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕР№ РѕР±СЂР°Р±РѕС‚РєРё, Р·Р°С‚РµРј РІРµСЂРЅРёС‚РµСЃСЊ Рє СЌС‚РѕРјСѓ РґРѕРєСѓРјРµРЅС‚Сѓ.
+                    Ожидается завершение проверки. Дождитесь окончания автоматической обработки, затем вернитесь к этому документу.
                 </p>
             {% elif document.status == "error" %}
                 <p class="panel-text">
-                    РџСЂРѕРІРµСЂСЊС‚Рµ РєР°С‡РµСЃС‚РІРѕ РёСЃС…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р°. РџСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё Р·Р°РіСЂСѓР·РёС‚Рµ РґРѕРєСѓРјРµРЅС‚ РїРѕРІС‚РѕСЂРЅРѕ.
+                    Проверьте качество исходного файла. При необходимости загрузите документ повторно.
                 </p>
             {% elif decision == "manual_review" or decision == "risk" %}
                 <p class="panel-text">
-                    РќРµ СѓС‚РІРµСЂР¶РґР°Р№С‚Рµ РґРѕРєСѓРјРµРЅС‚ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё. Р Р°Р·Р±РµСЂРёС‚Рµ РІСЃРµ РІС‹СЏРІР»РµРЅРЅС‹Рµ РїСЂРѕР±Р»РµРјС‹ Рё РїСЂРёРјРёС‚Рµ СЂРµС€РµРЅРёРµ РІСЂСѓС‡РЅСѓСЋ.
+                    Не принимайте документ без разбора. Изучите все выявленные проблемы ниже и примите решение вручную.
                 </p>
             {% elif decision == "warning" %}
                 <p class="panel-text">
-                    РР·СѓС‡РёС‚Рµ Р·Р°РјРµС‡Р°РЅРёСЏ, СЃРІРµСЂСЊС‚Рµ СЂРµРєРІРёР·РёС‚С‹ РґРѕРєСѓРјРµРЅС‚Р° Рё РїСЂРёРјРёС‚Рµ СЂРµС€РµРЅРёРµ РѕР± СѓС‚РІРµСЂР¶РґРµРЅРёРё.
+                    Изучите замечания ниже, сверьте реквизиты документа и примите решение.
                 </p>
-            {% else %}
-                <p class="panel-text">
-                    РЎРІРµСЂСЊС‚Рµ РѕСЃРЅРѕРІРЅС‹Рµ СЂРµРєРІРёР·РёС‚С‹ РґРѕРєСѓРјРµРЅС‚Р° Рё РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё Р·Р°РјРµС‡Р°РЅРёР№ СѓС‚РІРµСЂРґРёС‚Рµ РµРіРѕ.
-                </p>
-            {% endif %}
-
-            {% if document.status != "verified" %}
+                {% if document.status == "ocr_completed" and check_results and decision == "ok" %}
                 <form
                     method="post"
                     action="{% url 'document-approve-page' document.pk %}"
@@ -860,30 +1227,30 @@
                 >
                     {% csrf_token %}
                     <button class="primary-button" type="submit">
-                        РЈС‚РІРµСЂРґРёС‚СЊ РґРѕРєСѓРјРµРЅС‚
+                        Утвердить документ
                     </button>
                 </form>
             {% endif %}
-
+        {% endif %}
             <div class="action-links">
                 <a
                     class="secondary-link"
                     href="{% url 'document-list-page' %}"
                 >
-                    Рљ СЃРїРёСЃРєСѓ РґРѕРєСѓРјРµРЅС‚РѕРІ
+                    К списку документов
                 </a>
                 <a
                     class="secondary-link"
                     href="{% url 'document-upload' %}"
                 >
-                    Р—Р°РіСЂСѓР·РёС‚СЊ РґСЂСѓРіРѕР№ РґРѕРєСѓРјРµРЅС‚
+                    Загрузить другой документ
                 </a>
             </div>
         </section>
 
         <section class="panel">
             <h2 class="panel-title">
-                РћСЃРЅРѕРІРЅС‹Рµ СЂРµРєРІРёР·РёС‚С‹
+                Основные реквизиты
             </h2>
 
             {% if document_fields %}
@@ -891,12 +1258,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "document_type" %}
                             <div class="field-item">
-                                <span class="field-label">РўРёРї РґРѕРєСѓРјРµРЅС‚Р°</span>
+                                <span class="field-label">Тип документа</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -906,12 +1273,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "supplier_name" %}
                             <div class="field-item">
-                                <span class="field-label">РџРѕСЃС‚Р°РІС‰РёРє</span>
+                                <span class="field-label">Поставщик</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -921,12 +1288,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "supplier_inn" %}
                             <div class="field-item">
-                                <span class="field-label">РРќРќ РїРѕСЃС‚Р°РІС‰РёРєР°</span>
+                                <span class="field-label">ИНН поставщика</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -936,12 +1303,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "document_number" %}
                             <div class="field-item">
-                                <span class="field-label">РќРѕРјРµСЂ РґРѕРєСѓРјРµРЅС‚Р°</span>
+                                <span class="field-label">Номер документа</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -951,12 +1318,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "document_date" %}
                             <div class="field-item">
-                                <span class="field-label">Р”Р°С‚Р° РґРѕРєСѓРјРµРЅС‚Р°</span>
+                                <span class="field-label">Дата документа</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -966,12 +1333,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "currency" %}
                             <div class="field-item">
-                                <span class="field-label">Р’Р°Р»СЋС‚Р°</span>
+                                <span class="field-label">Валюта</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -981,12 +1348,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "total_amount" %}
                             <div class="field-item">
-                                <span class="field-label">РЎСѓРјРјР°</span>
+                                <span class="field-label">Сумма</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -996,12 +1363,12 @@
                     {% for field in document_fields %}
                         {% if field.field_name == "vat_amount" %}
                             <div class="field-item">
-                                <span class="field-label">РЎСѓРјРјР° РќР”РЎ</span>
+                                <span class="field-label">Сумма НДС</span>
                                 <span class="field-value">
                                     {% if field.is_manually_corrected %}
                                         {{ field.corrected_value }}
                                     {% else %}
-                                        {{ field.normalized_value|default:"вЂ”" }}
+                                        {{ field.normalized_value|default:"—" }}
                                     {% endif %}
                                 </span>
                             </div>
@@ -1011,15 +1378,15 @@
 
                 <details class="details-block">
                     <summary>
-                        Р’СЃРµ РёР·РІР»РµС‡С‘РЅРЅС‹Рµ РїРѕР»СЏ
+                        Все извлечённые поля
                     </summary>
                     <div class="details-content">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>РџРѕР»Рµ</th>
-                                    <th>Р—РЅР°С‡РµРЅРёРµ</th>
-                                    <th>РЈРІРµСЂРµРЅРЅРѕСЃС‚СЊ</th>
+                                    <th>Поле</th>
+                                    <th>Значение</th>
+                                    <th>Уверенность</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1037,7 +1404,7 @@
                                             {% if field.confidence is not None %}
                                                 {{ field.confidence }}
                                             {% else %}
-                                                вЂ”
+                                                —
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -1048,25 +1415,25 @@
                 </details>
             {% else %}
                 <p class="empty-note">
-                    Р РµРєРІРёР·РёС‚С‹ РµС‰С‘ РЅРµ РёР·РІР»РµС‡РµРЅС‹.
+                    Реквизиты ещё не извлечены.
                 </p>
             {% endif %}
         </section>
 
         <details class="details-block">
             <summary>
-                Р’СЃРµ РїСЂРѕРІРµСЂРєРё
+                Все проверки
             </summary>
             <div class="details-content">
                 {% if check_results %}
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>РџСЂР°РІРёР»Рѕ</th>
-                                <th>РЎС‚Р°С‚СѓСЃ</th>
-                                <th>РЎРµСЂСЊС‘Р·РЅРѕСЃС‚СЊ</th>
-                                <th>Р‘Р°Р»Р»</th>
-                                <th>РћР±СЉСЏСЃРЅРµРЅРёРµ</th>
+                                <th>Правило</th>
+                                <th>Статус</th>
+                                <th>Серьёзность</th>
+                                <th>Балл</th>
+                                <th>Объяснение</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1083,7 +1450,7 @@
                     </table>
                 {% else %}
                     <p class="empty-note">
-                        Р РµР·СѓР»СЊС‚Р°С‚С‹ РїСЂРѕРІРµСЂРѕРє РїРѕРєР° РЅРµРґРѕСЃС‚СѓРїРЅС‹.
+                        Результаты проверок пока недоступны.
                     </p>
                 {% endif %}
             </div>
@@ -1091,45 +1458,45 @@
 
         <details class="details-block">
             <summary>
-                OCR Рё С‚РµС…РЅРёС‡РµСЃРєРёРµ РґР°РЅРЅС‹Рµ
+                OCR и технические данные
             </summary>
             <div class="details-content">
                 <p class="tech-meta">
-                    Р Р°Р·РјРµСЂ С„Р°Р№Р»Р°: {{ document.file_size }} Р±Р°Р№С‚
+                    Размер файла: {{ document.file_size }} байт
                 </p>
 
                 {% if ocr_result %}
                     <p class="tech-meta">
-                        РџСЂРѕРІР°Р№РґРµСЂ OCR: {{ ocr_result.provider }}
+                        Провайдер OCR: {{ ocr_result.provider }}
                     </p>
 
                     {% if ocr_result.confidence is not None %}
                         <p class="tech-meta">
-                            РЈРІРµСЂРµРЅРЅРѕСЃС‚СЊ OCR: {{ ocr_result.confidence }}
+                            Уверенность OCR: {{ ocr_result.confidence }}
                         </p>
                     {% endif %}
 
                     {% if ocr_result.processing_time_ms is not None %}
                         <p class="tech-meta">
-                            Р’СЂРµРјСЏ РѕР±СЂР°Р±РѕС‚РєРё: {{ ocr_result.processing_time_ms }} РјСЃ
+                            Время обработки: {{ ocr_result.processing_time_ms }} мс
                         </p>
                     {% endif %}
 
                     {% if ocr_result.error_message %}
                         <p class="tech-meta" style="color: var(--red);">
-                            РћС€РёР±РєР° OCR: {{ ocr_result.error_message }}
+                            Ошибка OCR: {{ ocr_result.error_message }}
                         </p>
                     {% endif %}
 
                     {% if ocr_result.raw_text %}
                         <h3 class="panel-title" style="margin-top: 16px;">
-                            Р Р°СЃРїРѕР·РЅР°РЅРЅС‹Р№ С‚РµРєСЃС‚
+                            Распознанный текст
                         </h3>
                         <pre class="ocr-text">{{ ocr_result.raw_text }}</pre>
                     {% endif %}
                 {% else %}
                     <p class="empty-note">
-                        Р”Р°РЅРЅС‹Рµ OCR РїРѕРєР° РЅРµРґРѕСЃС‚СѓРїРЅС‹.
+                        Данные OCR пока недоступны.
                     </p>
                 {% endif %}
             </div>

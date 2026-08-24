@@ -36,7 +36,7 @@ class DocumentOCRTests(TestCase):
             company=self.company,
             original_file=SimpleUploadedFile(
                 "invoice_test.pdf",
-                b"fake pdf content",
+                b"%PDF-1.4`n%test pdf content",
                 content_type="application/pdf",
             ),
             filename="invoice_test.pdf",
@@ -282,7 +282,7 @@ class DocumentUploadViewTests(TestCase):
                 "company": self.company.id,
                 "document": SimpleUploadedFile(
                     "success_invoice.pdf",
-                    b"fake pdf content",
+                    b"%PDF-1.4`n%test pdf content",
                     content_type="application/pdf",
                 ),
             },
@@ -304,7 +304,7 @@ class DocumentUploadViewTests(TestCase):
 
         self.assertEqual(
             document.file_size,
-            len(b"fake pdf content"),
+            len(b"%PDF-1.4`n%test pdf content"),
         )
 
         self.assertEqual(
@@ -356,7 +356,7 @@ class DocumentUploadViewTests(TestCase):
                 "company": self.company.id,
                 "document": SimpleUploadedFile(
                     "fields_invoice.pdf",
-                    b"fake pdf content",
+                    b"%PDF-1.4`n%test pdf content",
                     content_type="application/pdf",
                 ),
             },
@@ -413,7 +413,7 @@ class DocumentUploadViewTests(TestCase):
                 "company": self.company.id,
                 "document": SimpleUploadedFile(
                     "failed_invoice.pdf",
-                    b"fake pdf content",
+                    b"%PDF-1.4`n%test pdf content",
                     content_type="application/pdf",
                 ),
             },
@@ -468,11 +468,11 @@ class DocumentListAPITests(APITestCase):
             company=self.company,
             original_file=SimpleUploadedFile(
                 "my_invoice.pdf",
-                b"fake pdf content",
+                b"%PDF-1.4`n%test pdf content",
                 content_type="application/pdf",
             ),
             filename="my_invoice.pdf",
-            file_size=len(b"fake pdf content"),
+            file_size=len(b"%PDF-1.4`n%test pdf content"),
         )
 
         self.other_document = Document.objects.create(
@@ -601,11 +601,11 @@ class DocumentStatusAPITests(APITestCase):
             company=self.company,
             original_file=SimpleUploadedFile(
                 "status_invoice.pdf",
-                b"fake pdf content",
+                b"%PDF-1.4`n%test pdf content",
                 content_type="application/pdf",
             ),
             filename="status_invoice.pdf",
-            file_size=len(b"fake pdf content"),
+            file_size=len(b"%PDF-1.4`n%test pdf content"),
             status=Document.Status.OCR_PROCESSING,
         )
 
@@ -753,11 +753,11 @@ class DocumentRecheckAPITests(APITestCase):
             company=self.company,
             original_file=SimpleUploadedFile(
                 "recheck_invoice.pdf",
-                b"fake pdf content",
+                b"%PDF-1.4`n%test pdf content",
                 content_type="application/pdf",
             ),
             filename="recheck_invoice.pdf",
-            file_size=len(b"fake pdf content"),
+            file_size=len(b"%PDF-1.4`n%test pdf content"),
             status=Document.Status.OCR_COMPLETED,
         )
 
@@ -953,11 +953,11 @@ class DocumentReportAPITests(APITestCase):
             company=self.company,
             original_file=SimpleUploadedFile(
                 "report_invoice.pdf",
-                b"fake pdf content",
+                b"%PDF-1.4`n%test pdf content",
                 content_type="application/pdf",
             ),
             filename="report_invoice.pdf",
-            file_size=len(b"fake pdf content"),
+            file_size=len(b"%PDF-1.4`n%test pdf content"),
             status=Document.Status.OCR_COMPLETED,
         )
 
@@ -1149,11 +1149,11 @@ class PipelineAPITests(APITestCase):
             company=self.company,
             original_file=SimpleUploadedFile(
                 "pipeline_invoice.pdf",
-                b"fake pdf content",
+                b"%PDF-1.4`n%test pdf content",
                 content_type="application/pdf",
             ),
             filename="pipeline_invoice.pdf",
-            file_size=len(b"fake pdf content"),
+            file_size=len(b"%PDF-1.4`n%test pdf content"),
             status=Document.Status.UPLOADED,
         )
 
@@ -1426,11 +1426,11 @@ class DocumentDetailPageUITests(APITestCase):
             company=self.company,
             original_file=SimpleUploadedFile(
                 "detail_invoice.pdf",
-                b"fake pdf content",
+                b"%PDF-1.4`n%test pdf content",
                 content_type="application/pdf",
             ),
             filename="detail_invoice.pdf",
-            file_size=len(b"fake pdf content"),
+            file_size=len(b"%PDF-1.4`n%test pdf content"),
             status=Document.Status.OCR_COMPLETED,
         )
 

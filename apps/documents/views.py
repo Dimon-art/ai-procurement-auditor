@@ -38,6 +38,8 @@ def upload_document(request):
         company_id = request.POST.get("company")
         uploaded_file = request.FILES.get("document")
 
+        validate_uploaded_file(uploaded_file)
+
         company = Company.objects.get(
             id=company_id
         )
@@ -66,7 +68,13 @@ def upload_document(request):
         try:
             process_document(document)
         except Exception:
-            pass
+            document.status = Document.Status.ERROR
+            document.save(
+                update_fields=[
+                    "status",
+                    "updated_at",
+                ]
+            )
 
         document.refresh_from_db()
 

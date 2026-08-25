@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # Load environment variables from the local .env file.
 load_dotenv(BASE_DIR / ".env")
 
@@ -33,25 +34,55 @@ if not SECRET_KEY:
         "SECRET_KEY is not configured"
     )
 
+
 DEBUG = os.getenv(
     "DEBUG",
     "True",
 ).lower() == "true"
 
+
 allowed_hosts_value = os.getenv(
     "ALLOWED_HOSTS",
     "",
 )
+
 ALLOWED_HOSTS = [
     host.strip()
     for host in allowed_hosts_value.split(",")
     if host.strip()
 ]
 
+
+csrf_trusted_origins_value = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    "",
+)
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in csrf_trusted_origins_value.split(",")
+    if origin.strip()
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+SESSION_COOKIE_SECURE = os.getenv(
+    "SESSION_COOKIE_SECURE",
+    "False",
+).lower() == "true"
+
+CSRF_COOKIE_SECURE = os.getenv(
+    "CSRF_COOKIE_SECURE",
+    "False",
+).lower() == "true"
+
+
 if not DEBUG and not ALLOWED_HOSTS:
     raise RuntimeError(
         "ALLOWED_HOSTS must be configured when DEBUG=False"
     )
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -70,6 +101,7 @@ INSTALLED_APPS = [
     "apps.audit.apps.AuditConfig",
 ]
 
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -84,6 +116,7 @@ REST_FRAMEWORK = {
     },
 }
 
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -94,7 +127,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 ROOT_URLCONF = "config.urls"
+
 
 TEMPLATES = [
     {
@@ -111,11 +146,11 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
     "default": {
@@ -126,7 +161,6 @@ DATABASES = {
 
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -145,7 +179,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 
@@ -156,14 +189,12 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# Static files
 
 STATIC_URL = "static/"
 
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -184,6 +215,8 @@ OCR_PROVIDER = os.getenv("OCR_PROVIDER", "yandex")
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/documents/"
 LOGOUT_REDIRECT_URL = "/login/"
+
+
 # Logging
 
 LOGGING = {

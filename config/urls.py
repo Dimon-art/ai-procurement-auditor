@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.views import LoginView, LogoutView
+from django.http import JsonResponse
 from django.urls import path
 
 from rest_framework_simplejwt.views import (
@@ -32,6 +33,7 @@ from config.health import health_check
 
 
 urlpatterns = [
+    path("", lambda request: JsonResponse({"status": "ok"})),
     path(
         "health/",
         health_check,
@@ -165,3 +167,4 @@ if settings.DEBUG:
         settings.MEDIA_URL,
         document_root=settings.MEDIA_ROOT,
     )
+

@@ -438,16 +438,12 @@
                 {% csrf_token %}
 
                 <div class="form-group">
-                    <label class="form-label" for="company">
+                    <label class="form-label">
                         Компания
                     </label>
-                    <select name="company" id="company" required>
-                        {% for company in companies %}
-                            <option value="{{ company.id }}">
-                                {{ company.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <p class="form-hint">
+                        {{ request.user.profile.company.name }}
+                    </p>
                 </div>
 
                 <div class="form-group">

@@ -250,6 +250,24 @@ class DocumentUploadViewTests(TestCase):
         self.company = Company.objects.create(
             name="Upload Test Company",
         )
+        self.other_company = Company.objects.create(
+            name="Other Upload Company",
+        )
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="uploaduser",
+            password="StrongTestPassword123!",
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Upload User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+
+        self.client.force_login(self.user)
 
     @patch(
         "apps.documents.views.process_document",
@@ -279,10 +297,9 @@ class DocumentUploadViewTests(TestCase):
         response = self.client.post(
             "/documents/upload/",
             {
-                "company": self.company.id,
                 "document": SimpleUploadedFile(
                     "success_invoice.pdf",
-                    b"%PDF-1.4`n%test pdf content",
+                    b"%PDF-1.4\n%test pdf content",
                     content_type="application/pdf",
                 ),
             },
@@ -303,8 +320,13 @@ class DocumentUploadViewTests(TestCase):
         )
 
         self.assertEqual(
+            document.company_id,
+            self.company.id,
+        )
+
+        self.assertEqual(
             document.file_size,
-            len(b"%PDF-1.4`n%test pdf content"),
+            len(b"%PDF-1.4\n%test pdf content"),
         )
 
         self.assertEqual(
@@ -353,10 +375,9 @@ class DocumentUploadViewTests(TestCase):
         response = self.client.post(
             "/documents/upload/",
             {
-                "company": self.company.id,
                 "document": SimpleUploadedFile(
                     "fields_invoice.pdf",
-                    b"%PDF-1.4`n%test pdf content",
+                    b"%PDF-1.4\n%test pdf content",
                     content_type="application/pdf",
                 ),
             },
@@ -379,6 +400,11 @@ class DocumentUploadViewTests(TestCase):
 
         document = Document.objects.get(
             filename="fields_invoice.pdf",
+        )
+
+        self.assertEqual(
+            document.company_id,
+            self.company.id,
         )
 
         mock_process_document.assert_called_once_with(
@@ -410,10 +436,9 @@ class DocumentUploadViewTests(TestCase):
         response = self.client.post(
             "/documents/upload/",
             {
-                "company": self.company.id,
                 "document": SimpleUploadedFile(
                     "failed_invoice.pdf",
-                    b"%PDF-1.4`n%test pdf content",
+                    b"%PDF-1.4\n%test pdf content",
                     content_type="application/pdf",
                 ),
             },
@@ -436,6 +461,242 @@ class DocumentUploadViewTests(TestCase):
         mock_process_document.assert_called_once_with(
             document,
         )
+
+    def test_unauthenticated_user_cannot_upload_document(self):
+        self.client.logout()
+
+        response = self.client.post(
+            "/documents/upload/",
+            {
+                "document": SimpleUploadedFile(
+                    "anon_invoice.pdf",
+                    b"%PDF-1.4\n%test pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            302,
+        )
+        self.assertIn(
+            reverse("login"),
+            response.url,
+        )
+        self.assertFalse(
+            Document.objects.filter(
+                filename="anon_invoice.pdf",
+            ).exists()
+        )
+
+    @patch(
+        "apps.documents.views.process_document",
+    )
+    def test_upload_assigns_document_to_user_company(
+        self,
+        mock_process_document,
+    ):
+        mock_process_document.return_value = None
+
+        response = self.client.post(
+            "/documents/upload/",
+            {
+                "document": SimpleUploadedFile(
+                    "own_company_invoice.pdf",
+                    b"%PDF-1.4\n%test pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        document = Document.objects.get(
+            filename="own_company_invoice.pdf",
+        )
+        self.assertEqual(
+            document.company_id,
+            self.company.id,
+        )
+
+    @patch(
+        "apps.documents.views.process_document",
+    )
+    def test_upload_ignores_forged_company_id(
+        self,
+        mock_process_document,
+    ):
+        mock_process_document.return_value = None
+
+        response = self.client.post(
+            "/documents/upload/",
+            {
+                "company": self.other_company.id,
+                "document": SimpleUploadedFile(
+                    "forged_company_invoice.pdf",
+                    b"%PDF-1.4\n%test pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        document = Document.objects.get(
+            filename="forged_company_invoice.pdf",
+        )
+        self.assertEqual(
+            document.company_id,
+            self.company.id,
+        )
+        self.assertNotEqual(
+            document.company_id,
+            self.other_company.id,
+        )
+
+    @patch(
+        "apps.documents.views.logger",
+    )
+    @patch(
+        "apps.documents.views.process_document",
+    )
+    def test_upload_pipeline_error_sets_status_and_logs_exception(
+        self,
+        mock_process_document,
+        mock_logger,
+    ):
+        mock_process_document.side_effect = RuntimeError(
+            "pipeline boom",
+        )
+
+        response = self.client.post(
+            "/documents/upload/",
+            {
+                "document": SimpleUploadedFile(
+                    "logged_error_invoice.pdf",
+                    b"%PDF-1.4\n%test pdf content",
+                    content_type="application/pdf",
+                ),
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        document = Document.objects.get(
+            filename="logged_error_invoice.pdf",
+        )
+        self.assertEqual(
+            document.status,
+            Document.Status.ERROR,
+        )
+        mock_logger.exception.assert_called_once()
+
+    def test_documents_list_page_works_for_authenticated_user(self):
+        response = self.client.get(
+            reverse("document-list-page"),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+        self.assertTemplateUsed(
+            response,
+            "documents/list.html",
+        )
+
+
+class PipelineRunErrorHandlingTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        user_model = get_user_model()
+        self.user = user_model.objects.create_user(
+            username="pipelineerror",
+            password="StrongTestPassword123!",
+        )
+        self.company = Company.objects.create(
+            name="Pipeline Error Company",
+        )
+        UserProfile.objects.create(
+            user=self.user,
+            company=self.company,
+            full_name="Pipeline Error User",
+            role=UserProfile.Role.ACCOUNTANT,
+            status=UserProfile.Status.ACTIVE,
+        )
+        self.document = Document.objects.create(
+            company=self.company,
+            original_file=SimpleUploadedFile(
+                "pipeline_error.pdf",
+                b"%PDF-1.4\n%test pdf content",
+                content_type="application/pdf",
+            ),
+            filename="pipeline_error.pdf",
+            file_size=16,
+            status=Document.Status.UPLOADED,
+        )
+
+    def authenticate(self):
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            {
+                "username": "pipelineerror",
+                "password": "StrongTestPassword123!",
+            },
+            format="json",
+        )
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}",
+        )
+
+    @patch(
+        "apps.documents.views.logger",
+    )
+    @patch(
+        "apps.documents.views.process_document_ocr",
+    )
+    def test_pipeline_failure_sets_error_and_logs_exception(
+        self,
+        mock_process_document_ocr,
+        mock_logger,
+    ):
+        mock_process_document_ocr.side_effect = RuntimeError(
+            "ocr pipeline failed",
+        )
+
+        self.authenticate()
+
+        response = self.client.post(
+            reverse(
+                "pipeline-start",
+                kwargs={
+                    "document_id": self.document.pk,
+                },
+            ),
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+        self.document.refresh_from_db()
+        self.assertEqual(
+            self.document.status,
+            Document.Status.ERROR,
+        )
+        mock_logger.exception.assert_called_once()
 
 
 class DocumentListAPITests(APITestCase):

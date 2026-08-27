@@ -1,4 +1,9 @@
+import logging
+
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
@@ -10,7 +15,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit.service import create_audit_log
-from apps.companies.models import Company
 from apps.documents.models import Document
 from apps.documents.pipeline_serializers import PipelineHistorySerializer
 from apps.documents.serializers import (
@@ -19,30 +23,33 @@ from apps.documents.serializers import (
 )
 from apps.documents.services.document_ocr import process_document_ocr
 from apps.documents.services.file_metadata import calculate_file_metadata
+from apps.documents.services.file_validation import validate_uploaded_file
 from apps.documents.services.ocr_factory import get_ocr_service
+from apps.documents.services.pipeline import process_document
 from apps.rules.decision import determine_document_decision
 from apps.rules.risk_score import calculate_risk_score
 from apps.rules.service import run_rule_engine
-from apps.documents.services.pipeline import process_document
-from apps.documents.services.file_validation import validate_uploaded_file
+
+logger = logging.getLogger(__name__)
 
 
+@login_required
 def upload_document(request):
     """
     Upload document and run OCR.
     """
 
-    companies = Company.objects.all()
+    try:
+        company = request.user.profile.company
+    except ObjectDoesNotExist:
+        return HttpResponseForbidden(
+            "User profile is not configured."
+        )
 
     if request.method == "POST":
-        company_id = request.POST.get("company")
         uploaded_file = request.FILES.get("document")
 
         validate_uploaded_file(uploaded_file)
-
-        company = Company.objects.get(
-            id=company_id
-        )
 
         document = Document.objects.create(
             company=company,
@@ -68,6 +75,13 @@ def upload_document(request):
         try:
             process_document(document)
         except Exception:
+            logger.exception(
+                "Document processing failed during HTML upload. "
+                "document_id=%s user_id=%s company_id=%s",
+                document.pk,
+                request.user.pk,
+                company.pk,
+            )
             document.status = Document.Status.ERROR
             document.save(
                 update_fields=[
@@ -90,7 +104,6 @@ def upload_document(request):
             request,
             "documents/upload.html",
             {
-                "companies": companies,
                 "uploaded_document": document,
                 "ocr_result": ocr_result,
                 "document_fields": document_fields,
@@ -100,9 +113,6 @@ def upload_document(request):
     return render(
         request,
         "documents/upload.html",
-        {
-            "companies": companies,
-        },
     )
 
 
@@ -411,6 +421,20 @@ def _run_pipeline(request, document):
         )
 
     except Exception:
+        logger.exception(
+            "Document pipeline processing failed. "
+            "document_id=%s user_id=%s company_id=%s",
+            document.pk,
+            request.user.pk,
+            document.company_id,
+        )
+        document.status = Document.Status.ERROR
+        document.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
         return Response(
             {
                 "success": False,

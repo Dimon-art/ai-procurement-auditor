@@ -1,0 +1,207 @@
+<li class="rule-check-card rule-check-card--{{ result.status }}">
+    <span
+        class="rule-check-signal"
+        aria-hidden="true"
+        title="{% if result.status == 'passed' %}Пройдено{% elif result.status == 'warning' %}Требует внимания{% elif result.status == 'failed' %}Не пройдено{% else %}{{ result.get_status_display }}{% endif %}"
+    ></span>
+
+    <div class="rule-check-body">
+        <div class="rule-check-header">
+            <h3 class="rule-check-title">
+                {% if result.rule_id == "R001" %}
+                    Проверка формата файла
+                {% elif result.rule_id == "R002" %}
+                    Проверка целостности файла
+                {% elif result.rule_id == "R003" %}
+                    Проверка качества OCR
+                {% elif result.rule_id == "R004" %}
+                    Проверка обязательных полей
+                {% elif result.rule_id == "R005" %}
+                    Проверка поставщика
+                {% elif result.rule_id == "R006" %}
+                    Проверка дубликата файла
+                {% elif result.rule_id == "R007" %}
+                    Проверка дубликата документа
+                {% elif result.rule_id == "R008" %}
+                    Проверка суммы
+                {% elif result.rule_id == "R009" %}
+                    Проверка даты
+                {% elif result.rule_id == "R010" %}
+                    Проверка НДС
+                {% else %}
+                    {{ result.rule_id }}
+                {% endif %}
+            </h3>
+
+            <span class="rule-check-status rule-check-status--{{ result.status }}">
+                {% if result.status == "passed" %}
+                    Пройдено
+                {% elif result.status == "warning" %}
+                    Требует внимания
+                {% elif result.status == "failed" %}
+                    Не пройдено
+                {% elif result.status == "not_applicable" %}
+                    Не применимо
+                {% elif result.status == "insufficient_data" %}
+                    Недостаточно данных
+                {% else %}
+                    {{ result.get_status_display }}
+                {% endif %}
+            </span>
+        </div>
+
+        <p class="rule-check-code">
+            Правило {{ result.rule_id }}
+        </p>
+
+        <p class="rule-check-desc">
+            {% if result.rule_id == "R001" %}
+                {% if result.explanation == "Document file format is supported." %}
+                    Файл имеет поддерживаемый формат.
+                {% elif result.explanation == "Document file format is not supported." %}
+                    Формат файла не поддерживается.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R002" %}
+                {% if result.explanation == "Document file integrity metadata is valid." %}
+                    Метаданные файла корректны.
+                {% elif result.explanation == "Document file integrity metadata is invalid." %}
+                    Некорректные метаданные целостности файла.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R003" %}
+                {% if result.explanation == "OCR result quality is acceptable." %}
+                    Качество распознавания приемлемое.
+                {% elif result.explanation == "OCR result is missing." %}
+                    Результат OCR отсутствует.
+                {% elif result.explanation == "OCR processing completed with an error." %}
+                    OCR завершился с ошибкой.
+                {% elif result.explanation == "OCR returned empty text." %}
+                    OCR не распознал текст в документе.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R004" %}
+                {% if result.explanation == "All required document fields are present." %}
+                    Все обязательные поля документа заполнены.
+                {% elif result.explanation == "Required document fields are missing." %}
+                    Не хватает обязательных полей документа.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R005" %}
+                {% if result.explanation == "Supplier is valid." %}
+                    Поставщик найден в справочнике компании.
+                {% elif result.explanation == "Supplier INN is missing." %}
+                    Не указан ИНН поставщика.
+                {% elif result.explanation == "Supplier was not found in master data." %}
+                    Поставщик не найден в справочнике компании.
+                {% elif result.explanation == "Supplier is inactive." %}
+                    Поставщик неактивен.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R006" %}
+                {% if result.explanation == "Duplicate file was not found." %}
+                    Дубликат файла не обнаружен.
+                {% elif result.explanation == "Document file hash is missing." %}
+                    Отсутствует хеш файла документа.
+                {% elif result.explanation == "Duplicate file was found." %}
+                    Найден дубликат файла.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R007" %}
+                {% if result.explanation == "Duplicate document was not found." %}
+                    Дубликат документа не обнаружен.
+                {% elif result.explanation == "Duplicate document check cannot be completed because required fields are missing." %}
+                    Проверка дубликата документа невозможна: не хватает обязательных полей.
+                {% elif result.explanation == "Duplicate document was found." %}
+                    Найден дубликат документа с совпадающими реквизитами.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R008" %}
+                {% if result.explanation == "Total amount is valid." %}
+                    Сумма документа корректна.
+                {% elif result.explanation == "Total amount is missing." %}
+                    Не указана сумма документа.
+                {% elif result.explanation == "Total amount is empty." %}
+                    Сумма документа пустая.
+                {% elif result.explanation == "Total amount is invalid." %}
+                    Некорректная сумма документа.
+                {% elif result.explanation == "Total amount must be greater than zero." %}
+                    Сумма документа должна быть больше нуля.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R009" %}
+                {% if result.explanation == "Document date is valid." %}
+                    Дата документа корректна.
+                {% elif result.explanation == "Document date is missing." %}
+                    Не указана дата документа.
+                {% elif result.explanation == "Document date is empty." %}
+                    Дата документа пустая.
+                {% elif result.explanation == "Document date is invalid." %}
+                    Некорректная дата документа.
+                {% elif result.explanation == "Document date cannot be in the future." %}
+                    Дата документа не может быть в будущем.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% elif result.rule_id == "R010" %}
+                {% if result.explanation == "VAT amount is valid." %}
+                    Сумма НДС корректна.
+                {% elif result.explanation == "Total amount is missing or invalid." %}
+                    Сумма документа отсутствует или некорректна.
+                {% elif result.explanation == "VAT amount is missing or invalid." %}
+                    Сумма НДС отсутствует или некорректна.
+                {% elif result.explanation == "VAT amount cannot be negative." %}
+                    Сумма НДС не может быть отрицательной.
+                {% elif result.explanation == "VAT amount cannot exceed total amount." %}
+                    Сумма НДС не может превышать сумму документа.
+                {% else %}
+                    {{ result.explanation }}
+                {% endif %}
+            {% else %}
+                {{ result.explanation }}
+            {% endif %}
+        </p>
+
+        {% if result.score %}
+            <p class="rule-check-score">
+                +{{ result.score }} баллов риска
+            </p>
+        {% endif %}
+
+        {% if result.actual_value or result.expected_value or result.evidence %}
+            <details class="issue-tech-details">
+                <summary>
+                    Технические данные
+                </summary>
+                <div class="issue-tech-content">
+                    {% if result.actual_value %}
+                        <p>
+                            Фактическое значение:
+                            <pre>{{ result.actual_value }}</pre>
+                        </p>
+                    {% endif %}
+                    {% if result.expected_value %}
+                        <p>
+                            Ожидаемое значение:
+                            <pre>{{ result.expected_value }}</pre>
+                        </p>
+                    {% endif %}
+                    {% if result.evidence %}
+                        <p>
+                            Дополнительные данные:
+                            <pre>{{ result.evidence }}</pre>
+                        </p>
+                    {% endif %}
+                </div>
+            </details>
+        {% endif %}
+    </div>
+</li>

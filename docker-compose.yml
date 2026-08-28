@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./docker-data:/data
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /data/db.sqlite3
+      MEDIA_PATH: /data/media
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1,web
+      SESSION_COOKIE_SECURE: "False"
+      CSRF_COOKIE_SECURE: "False"

@@ -154,10 +154,16 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 
+database_path = os.getenv("DATABASE_PATH")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": (
+            Path(database_path)
+            if database_path
+            else BASE_DIR / "db.sqlite3"
+        ),
     }
 }
 
@@ -220,8 +226,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Media files
 
+media_path = os.getenv("MEDIA_PATH")
+
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = (
+    Path(media_path)
+    if media_path
+    else BASE_DIR / "media"
+)
 
 
 # OCR

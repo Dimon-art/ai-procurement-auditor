@@ -1,0 +1,32 @@
+{% extends "base_public.html" %}
+
+{% block title %}AI Procurement Auditor{% endblock %}
+
+{% block nav_links %}
+    <a class="nav-link" href="{% url 'login' %}">
+        Войти
+    </a>
+{% endblock %}
+
+{% block content %}
+    <section class="card card-wide">
+        <h1 class="page-title">
+            AI Procurement Auditor
+        </h1>
+
+        <p class="page-description">
+            Система автоматической проверки закупочных документов для бухгалтерии.
+            Загружайте счета и УПД, получайте распознавание, проверку по правилам
+            и понятную оценку риска.
+        </p>
+
+        <div class="actions">
+            <a class="primary-button" href="{% url 'login' %}">
+                Войти
+            </a>
+            <a class="secondary-button" href="{% url 'register' %}">
+                Регистрация
+            </a>
+        </div>
+    </section>
+{% endblock %}

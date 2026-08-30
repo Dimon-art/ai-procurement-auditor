@@ -2,7 +2,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.views import LoginView, LogoutView
-from django.http import JsonResponse
 from django.urls import path
 
 from rest_framework_simplejwt.views import (
@@ -28,7 +27,8 @@ from apps.documents.views import (
     upload_document,
 )
 from apps.suppliers.views import SupplierListView
-from apps.users.views import CurrentUserProfileView
+from apps.users.forms import ActiveUserAuthenticationForm
+from apps.users.views import CurrentUserProfileView, RegisterView
 from config.health import health_check
 
 
@@ -47,8 +47,14 @@ urlpatterns = [
         "login/",
         LoginView.as_view(
             template_name="registration/login.html",
+            authentication_form=ActiveUserAuthenticationForm,
         ),
         name="login",
+    ),
+    path(
+        "register/",
+        RegisterView.as_view(),
+        name="register",
     ),
     path(
         "logout/",

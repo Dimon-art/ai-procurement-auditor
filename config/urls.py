@@ -33,7 +33,7 @@ from config.health import health_check
 
 
 urlpatterns = [
-    path("", lambda request: JsonResponse({"status": "ok"})),
+    path("", DocumentListPageView.as_view()),
     path(
         "health/",
         health_check,

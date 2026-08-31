@@ -1,3 +1,4 @@
+{% load document_display %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -409,6 +410,35 @@
             border-radius: 6px;
             font-size: 11px;
             white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .check-data-list {
+            margin: 6px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .check-data-list li {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .check-data-list li:last-child {
+            border-bottom: 0;
+        }
+
+        .check-data-label {
+            min-width: 140px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .check-data-value {
+            color: var(--text);
             word-break: break-word;
         }
 
@@ -1135,26 +1165,73 @@
                                 {% if result.actual_value or result.expected_value or result.evidence %}
                                     <details class="issue-tech-details">
                                         <summary>
-                                            Технические данные проверки
+                                            Подробности проверки
                                         </summary>
                                         <div class="issue-tech-content">
                                             {% if result.actual_value %}
-                                                <p>
-                                                    Фактическое значение:
-                                                    <pre>{{ result.actual_value }}</pre>
-                                                </p>
+                                                <p>Фактическое значение:</p>
+                                                {% if result.actual_value|is_mapping %}
+                                                    <ul class="check-data-list">
+                                                        {% for key, value in result.actual_value.items %}
+                                                            <li>
+                                                                <span class="check-data-label">
+                                                                    {{ key|check_data_label }}
+                                                                </span>
+                                                                <span class="check-data-value">
+                                                                    {{ value|check_data_value:key }}
+                                                                </span>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p class="check-data-value">
+                                                        {{ result.actual_value|check_data_value }}
+                                                    </p>
+                                                {% endif %}
                                             {% endif %}
+
                                             {% if result.expected_value %}
-                                                <p>
-                                                    Ожидаемое значение:
-                                                    <pre>{{ result.expected_value }}</pre>
-                                                </p>
+                                                <p>Ожидаемое значение:</p>
+                                                {% if result.expected_value|is_mapping %}
+                                                    <ul class="check-data-list">
+                                                        {% for key, value in result.expected_value.items %}
+                                                            <li>
+                                                                <span class="check-data-label">
+                                                                    {{ key|check_data_label }}
+                                                                </span>
+                                                                <span class="check-data-value">
+                                                                    {{ value|check_data_value:key }}
+                                                                </span>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p class="check-data-value">
+                                                        {{ result.expected_value|check_data_value }}
+                                                    </p>
+                                                {% endif %}
                                             {% endif %}
+
                                             {% if result.evidence %}
-                                                <p>
-                                                    Дополнительные данные:
-                                                    <pre>{{ result.evidence }}</pre>
-                                                </p>
+                                                <p>Дополнительные данные:</p>
+                                                {% if result.evidence|is_mapping %}
+                                                    <ul class="check-data-list">
+                                                        {% for key, value in result.evidence.items %}
+                                                            <li>
+                                                                <span class="check-data-label">
+                                                                    {{ key|check_data_label }}
+                                                                </span>
+                                                                <span class="check-data-value">
+                                                                    {{ value|check_data_value:key }}
+                                                                </span>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p class="check-data-value">
+                                                        {{ result.evidence|check_data_value }}
+                                                    </p>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </details>
@@ -1249,124 +1326,20 @@
 
             {% if document_fields %}
                 <div class="fields-grid">
-                    {% for field in document_fields %}
-                        {% if field.field_name == "document_type" %}
-                            <div class="field-item">
-                                <span class="field-label">Тип документа</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% for field in document_fields %}
-                        {% if field.field_name == "supplier_name" %}
-                            <div class="field-item">
-                                <span class="field-label">Поставщик</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% for field in document_fields %}
-                        {% if field.field_name == "supplier_inn" %}
-                            <div class="field-item">
-                                <span class="field-label">ИНН поставщика</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% for field in document_fields %}
-                        {% if field.field_name == "document_number" %}
-                            <div class="field-item">
-                                <span class="field-label">Номер документа</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% for field in document_fields %}
-                        {% if field.field_name == "document_date" %}
-                            <div class="field-item">
-                                <span class="field-label">Дата документа</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% for field in document_fields %}
-                        {% if field.field_name == "currency" %}
-                            <div class="field-item">
-                                <span class="field-label">Валюта</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% for field in document_fields %}
-                        {% if field.field_name == "total_amount" %}
-                            <div class="field-item">
-                                <span class="field-label">Сумма</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% for field in document_fields %}
-                        {% if field.field_name == "vat_amount" %}
-                            <div class="field-item">
-                                <span class="field-label">Сумма НДС</span>
-                                <span class="field-value">
-                                    {% if field.is_manually_corrected %}
-                                        {{ field.corrected_value }}
-                                    {% else %}
-                                        {{ field.normalized_value|default:"—" }}
-                                    {% endif %}
-                                </span>
-                            </div>
-                        {% endif %}
+                    {% ordered_main_fields document_fields as main_fields %}
+                    {% for field in main_fields %}
+                        <div class="field-item">
+                            <span class="field-label">
+                                {{ field.field_name|document_field_label }}
+                            </span>
+                            <span class="field-value">
+                                {% if field.is_manually_corrected %}
+                                    {{ field.corrected_value|document_field_value:field.field_name }}
+                                {% else %}
+                                    {{ field.normalized_value|document_field_value:field.field_name }}
+                                {% endif %}
+                            </span>
+                        </div>
                     {% endfor %}
                 </div>
 
@@ -1386,12 +1359,14 @@
                             <tbody>
                                 {% for field in document_fields %}
                                     <tr>
-                                        <td>{{ field.field_name }}</td>
+                                        <td>
+                                            {{ field.field_name|document_field_label }}
+                                        </td>
                                         <td>
                                             {% if field.is_manually_corrected %}
-                                                {{ field.corrected_value }}
+                                                {{ field.corrected_value|document_field_value:field.field_name }}
                                             {% else %}
-                                                {{ field.normalized_value }}
+                                                {{ field.normalized_value|document_field_value:field.field_name }}
                                             {% endif %}
                                         </td>
                                         <td>
@@ -1410,6 +1385,77 @@
             {% else %}
                 <p class="empty-note">
                     Реквизиты ещё не извлечены.
+                </p>
+            {% endif %}
+        </section>
+
+        <section class="panel">
+            <h2 class="panel-title">
+                Позиции
+            </h2>
+
+            {% if line_items %}
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Наименование</th>
+                            <th>Количество</th>
+                            <th>Ед.</th>
+                            <th>Цена</th>
+                            <th>Сумма без НДС</th>
+                            <th>НДС</th>
+                            <th>Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in line_items %}
+                            <tr>
+                                <td>{{ item.line_number }}</td>
+                                <td>{{ item.description }}</td>
+                                <td>
+                                    {% if item.quantity is not None %}
+                                        {{ item.quantity }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.unit|default:"—" }}</td>
+                                <td>
+                                    {% if item.unit_price is not None %}
+                                        {{ item.unit_price }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.amount_without_vat is not None %}
+                                        {{ item.amount_without_vat }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.vat_amount is not None %}
+                                        {{ item.vat_amount }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.total_amount is not None %}
+                                        {{ item.total_amount }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="empty-note">
+                    Позиции не извлечены
                 </p>
             {% endif %}
         </section>
@@ -1433,11 +1479,11 @@
                         <tbody>
                             {% for result in check_results %}
                                 <tr>
-                                    <td>{{ result.rule_id }}</td>
-                                    <td>{{ result.get_status_display }}</td>
-                                    <td>{{ result.severity }}</td>
+                                    <td>{{ result.rule_id|check_rule_label }}</td>
+                                    <td>{{ result.status|check_status_label }}</td>
+                                    <td>{{ result.severity|check_severity_label }}</td>
                                     <td>{{ result.score }}</td>
-                                    <td>{{ result.explanation }}</td>
+                                    <td>{{ result.explanation|check_explanation }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

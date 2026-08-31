@@ -143,6 +143,11 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            "libraries": {
+                "document_display": (
+                    "apps.documents.templatetags.document_display"
+                ),
+            },
         },
     },
 ]

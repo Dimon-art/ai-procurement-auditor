@@ -83,7 +83,7 @@
                         Документы
                     </div>
                     <div class="status-count">
-                        {{ documents|length }}
+                        {{ documents_count }}
                     </div>
                 </div>
 
@@ -92,7 +92,7 @@
                         <span class="status-dot yellow"></span>
                         Требуют внимания
                     </div>
-                    <div class="status-count">—</div>
+                    <div class="status-count">{{ attention_count }}</div>
                 </div>
 
                 <div class="status-card">
@@ -100,7 +100,7 @@
                         <span class="status-dot red"></span>
                         Высокий риск
                     </div>
-                    <div class="status-count">—</div>
+                    <div class="status-count">{{ high_risk_count }}</div>
                 </div>
             </section>
 
@@ -108,7 +108,7 @@
                 <div class="documents-header">
                     <h2 class="documents-title">Последние документы</h2>
                     <span class="documents-count">
-                        Всего: {{ documents|length }}
+                        Всего: {{ documents_count }}
                     </span>
                 </div>
 

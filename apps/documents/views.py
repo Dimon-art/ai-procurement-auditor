@@ -608,6 +608,28 @@ class DocumentListPageView(LoginRequiredMixin, ListView):
             company=self.request.user.profile.company,
         ).order_by("-created_at")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        documents = self.get_queryset()
+        # Exact company-scoped total for accountant UI counters.
+        context["documents_count"] = documents.count()
+
+        attention_count = 0
+        high_risk_count = 0
+
+        for document in documents:
+            decision = determine_document_decision(
+                calculate_risk_score(document),
+            )
+            if decision == "warning":
+                attention_count += 1
+            elif decision in {"risk", "manual_review"}:
+                high_risk_count += 1
+
+        context["attention_count"] = attention_count
+        context["high_risk_count"] = high_risk_count
+        return context
+
 
 class DocumentDetailPageView(LoginRequiredMixin, DetailView):
     model = Document
@@ -627,6 +649,8 @@ class DocumentDetailPageView(LoginRequiredMixin, DetailView):
         context["document_fields"] = document.fields.order_by(
             "field_name",
         )
+
+        context["line_items"] = document.line_items.all()
 
         context["ocr_result"] = (
             document.ocr_results

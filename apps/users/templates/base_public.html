@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AI Procurement Auditor{% endblock %}</title>
+    <title>{% block title %}Контроль дублирующих счетов и платежей{% endblock %}</title>
 
     <style>
         :root {
@@ -243,7 +243,7 @@
             padding: 24px 32px;
             text-align: center;
             border-top: 1px solid var(--border);
-            background: var(--surface);
+            background: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('/static/images/footer/dmytro-tolokonov-Jq3WI9IQgEs-unsplash.jpg') center/cover no-repeat;
             font-size: 13px;
             color: var(--muted);
         }
@@ -264,7 +264,7 @@
 <body>
     <header class="top-nav">
         <a class="brand-title" href="{% url 'home' %}">
-            AI Procurement Auditor
+            Контроль дублирующих счетов и платежей
         </a>
 
         {% block nav_links %}
@@ -278,7 +278,7 @@
         {% block content %}{% endblock %}
     </main>
     <footer class="site-footer">
-        AI Procurement Auditor — учебный MVP.
+        Контроль дублирующих счетов и платежей — учебный MVP.
         <a href="https://github.com/Dimon-art/ai-procurement-auditor" target="_blank" rel="noopener">GitHub</a>
         ·
         Автор: Дмитрий Коноплев

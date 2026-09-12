@@ -3,30 +3,456 @@
 {% block title %}Контроль дублирующих счетов и платежей{% endblock %}
 
 {% block nav_links %}
-    <a class="nav-link" href="{% url 'login' %}">
-        Войти
-    </a>
+    <a class="nav-link" href="{% url 'login' %}">Войти</a>
 {% endblock %}
 
 {% block content %}
-    <section class="card card-wide">
-        <h1 class="page-title">
-            Контроль дублирующих счетов и платежей
-        </h1>
+<style>
+    .landing {
+        width: 100%;
+    }
 
-        <p class="page-description">
-            Система автоматической проверки закупочных документов для бухгалтерии.
-            Загружайте счета и УПД, получайте распознавание, проверку по правилам
-            и понятную оценку риска.
-        </p>
+    .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        gap: 56px;
+        align-items: center;
+        padding: 56px 0 72px;
+    }
 
-        <div class="actions">
-            <a class="primary-button" href="{% url 'login' %}">
-                Войти
-            </a>
-            <a class="secondary-button" href="{% url 'register' %}">
-                Регистрация
-            </a>
+    .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+        padding: 7px 12px;
+        border: 1px solid #bbf7d0;
+        border-radius: 999px;
+        background: #f0fdf4;
+        color: #166534;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .eyebrow::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #15803d;
+    }
+
+    .hero h1 {
+        max-width: 720px;
+        margin: 0;
+        color: #17231c;
+        font-size: clamp(42px, 6vw, 68px);
+        line-height: 1.02;
+        letter-spacing: -0.045em;
+    }
+
+    .hero h1 span {
+        display: block;
+        margin-top: 14px;
+        color: #166534;
+        font-size: 0.55em;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+    }
+
+    .hero-copy {
+        max-width: 650px;
+        margin: 24px 0 0;
+        color: #526057;
+        font-size: 18px;
+        line-height: 1.65;
+    }
+
+    .flow-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 24px;
+        color: #37443c;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .flow-line span {
+        padding: 8px 11px;
+        border: 1px solid #e1e8e3;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 30px;
+    }
+
+    .actions a {
+        min-width: 170px;
+        text-align: center;
+    }
+
+    .audit-card {
+        position: relative;
+        padding: 26px;
+        border: 1px solid #dbe5de;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 24px 60px rgba(31, 52, 40, 0.10);
+    }
+
+    .audit-card::before {
+        content: "DEMO RESULT";
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        color: #7a887f;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+    }
+
+    .audit-header {
+        padding-right: 92px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #edf1ee;
+    }
+
+    .audit-label {
+        color: #738078;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .risk-row {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 20px;
+        margin-top: 8px;
+    }
+
+    .risk-score {
+        color: #17231c;
+        font-size: 48px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+    }
+
+    .risk-score small {
+        color: #849087;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0;
+    }
+
+    .decision {
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+    }
+
+    .checks {
+        display: grid;
+        gap: 0;
+        margin-top: 8px;
+    }
+
+    .check {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid #edf1ee;
+        color: #344239;
+        font-size: 14px;
+    }
+
+    .check:last-child {
+        border-bottom: 0;
+    }
+
+    .check-status {
+        min-width: 22px;
+        font-size: 16px;
+        font-weight: 800;
+        text-align: right;
+    }
+
+    .check-status.ok {
+        color: #15803d;
+    }
+
+    .check-status.warn {
+        color: #a16207;
+    }
+
+    .section {
+        padding: 72px 0;
+        border-top: 1px solid #e3e9e5;
+    }
+
+    .section-heading {
+        max-width: 680px;
+        margin-bottom: 34px;
+    }
+
+    .section-heading h2 {
+        margin: 0;
+        color: #17231c;
+        font-size: 34px;
+        letter-spacing: -0.025em;
+    }
+
+    .section-heading p {
+        margin: 12px 0 0;
+        color: #66736b;
+        line-height: 1.6;
+    }
+
+    .steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+    }
+
+    .step,
+    .feature {
+        padding: 24px;
+        border: 1px solid #e1e8e3;
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    .step-number {
+        display: inline-flex;
+        width: 36px;
+        height: 36px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 18px;
+        border-radius: 10px;
+        background: #dcfce7;
+        color: #166534;
+        font-weight: 800;
+    }
+
+    .step h3,
+    .feature h3 {
+        margin: 0;
+        color: #25332b;
+        font-size: 16px;
+    }
+
+    .step p,
+    .feature p {
+        margin: 8px 0 0;
+        color: #69766e;
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    .feature-icon {
+        margin-bottom: 16px;
+        color: #166534;
+        font-size: 22px;
+    }
+
+    .rules {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .rule {
+        padding: 7px 9px;
+        border: 1px solid #dfe7e1;
+        border-radius: 7px;
+        background: #f8faf9;
+        color: #526057;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .portfolio-note {
+        padding: 22px 0 34px;
+        color: #7a867f;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    @media (max-width: 800px) {
+        .hero {
+            grid-template-columns: 1fr;
+            gap: 34px;
+            padding: 38px 0 54px;
+        }
+
+        .steps {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .features {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .hero h1 {
+            font-size: 42px;
+        }
+
+        .steps {
+            grid-template-columns: 1fr;
+        }
+
+        .actions a {
+            width: 100%;
+        }
+
+        .audit-card {
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="landing">
+    <section class="hero">
+        <div>
+            <div class="eyebrow">AI-powered document audit</div>
+            <h1>
+                Контроль дублирующих счетов и платежей
+                <span>AI-аудит закупочных документов</span>
+            </h1>
+
+            <p class="hero-copy">
+                Загружайте закупочные документы и получайте структурированную проверку:
+                от распознавания текста до оценки риска и итогового решения.
+            </p>
+
+            <div class="flow-line" aria-label="Процесс проверки">
+                <span>Документ</span>
+                <span>→ OCR</span>
+                <span>→ 10 правил</span>
+                <span>→ Risk score</span>
+                <span>→ Решение</span>
+            </div>
+
+            <div class="actions">
+                <a class="primary-button" href="{% url 'login' %}">Войти в систему</a>
+                <a class="secondary-button" href="{% url 'register' %}">Создать аккаунт</a>
+            </div>
+        </div>
+
+        <aside class="audit-card" aria-label="Пример результата аудита">
+            <div class="audit-header">
+                <div class="audit-label">Пример результата</div>
+                <div class="risk-row">
+                    <div class="risk-score">18 <small>/ 100</small></div>
+                    <div class="decision">APPROVE</div>
+                </div>
+            </div>
+
+            <div class="checks">
+                <div class="check"><span>Формат документа</span><span class="check-status ok">✓</span></div>
+                <div class="check"><span>Обязательные реквизиты</span><span class="check-status ok">✓</span></div>
+                <div class="check"><span>Поставщик</span><span class="check-status ok">✓</span></div>
+                <div class="check"><span>Суммы</span><span class="check-status ok">✓</span></div>
+                <div class="check"><span>НДС</span><span class="check-status warn">⚠</span></div>
+            </div>
+        </aside>
+    </section>
+
+    <section class="section">
+        <div class="section-heading">
+            <h2>Как это работает</h2>
+            <p>Один понятный pipeline вместо ручной проверки каждого документа.</p>
+        </div>
+
+        <div class="steps">
+            <article class="step">
+                <div class="step-number">1</div>
+                <h3>Загрузите документ</h3>
+                <p>Передайте счёт, УПД или другой закупочный документ в систему.</p>
+            </article>
+            <article class="step">
+                <div class="step-number">2</div>
+                <h3>AI распознаёт</h3>
+                <p>OCR извлекает текст и данные, необходимые для дальнейшей проверки.</p>
+            </article>
+            <article class="step">
+                <div class="step-number">3</div>
+                <h3>Rule Engine проверяет</h3>
+                <p>Набор из 10 правил анализирует реквизиты, суммы и другие признаки.</p>
+            </article>
+            <article class="step">
+                <div class="step-number">4</div>
+                <h3>Получаете результат</h3>
+                <p>Система формирует risk score и понятное итоговое решение.</p>
+            </article>
         </div>
     </section>
+
+    <section class="section">
+        <div class="section-heading">
+            <h2>Что проверяет система</h2>
+            <p>Комбинация OCR, бизнес-правил и оценки риска помогает быстро находить проблемные места.</p>
+        </div>
+
+        <div class="features">
+            <article class="feature">
+                <div class="feature-icon">◈</div>
+                <h3>Документ и реквизиты</h3>
+                <p>Формат, обязательные поля, даты и основные реквизиты документа.</p>
+                <div class="rules">
+                    <span class="rule">R001</span><span class="rule">R002</span><span class="rule">R003</span>
+                </div>
+            </article>
+
+            <article class="feature">
+                <div class="feature-icon">⌁</div>
+                <h3>Поставщик и суммы</h3>
+                <p>Проверка поставщика, сумм, НДС и согласованности финансовых данных.</p>
+                <div class="rules">
+                    <span class="rule">R004</span><span class="rule">R005</span><span class="rule">R006</span><span class="rule">R007</span>
+                </div>
+            </article>
+
+            <article class="feature">
+                <div class="feature-icon">✓</div>
+                <h3>Риски и дубликаты</h3>
+                <p>Дополнительные проверки и итоговая оценка риска для принятия решения.</p>
+                <div class="rules">
+                    <span class="rule">R008</span><span class="rule">R009</span><span class="rule">R010</span>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <div class="portfolio-note">
+        Учебный MVP · Django · REST API · OCR · Rule Engine
+    </div>
+</div>
 {% endblock %}

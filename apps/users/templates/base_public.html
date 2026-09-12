@@ -239,52 +239,22 @@
                 width: 100%;
             }
         }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 32px;
-            padding-top: 28px;
-            border-top: 1px solid var(--border);
-        }
-
-        .feature {
+        .site-footer {
+            padding: 24px 32px;
             text-align: center;
-        }
-
-        .feature-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            margin-bottom: 10px;
-            background: var(--accent-light);
-            color: var(--accent-dark);
-            border-radius: 50%;
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .feature-title {
-            margin: 0 0 4px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .feature-text {
-            margin: 0;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
             font-size: 13px;
             color: var(--muted);
-            line-height: 1.5;
         }
 
-        @media (max-width: 640px) {
-            .features {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
+        .site-footer a {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .site-footer a:hover {
+            color: var(--accent-dark);
         }
 
     </style>
@@ -307,5 +277,11 @@
     <main class="page-wrap">
         {% block content %}{% endblock %}
     </main>
+    <footer class="site-footer">
+        AI Procurement Auditor — учебный MVP.
+        <a href="https://github.com/Dimon-art/ai-procurement-auditor" target="_blank" rel="noopener">GitHub</a>
+        ·
+        Автор: Дмитрий Коноплев
+    </footer>
 </body>
 </html>

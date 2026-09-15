@@ -1,0 +1,10 @@
+{
+  "name": "AI Procurement Auditor",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "django",
+      "command": ".venv/bin/python manage.py runserver 0.0.0.0:8000"
+    }
+  ]
+}

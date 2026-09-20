@@ -144,6 +144,13 @@ class OCRFactoryTests(TestCase):
         "django.conf.settings.OCR_PROVIDER",
         "yandex",
     )
+    @patch.dict(
+        "os.environ",
+        {
+            "YANDEX_OCR_API_KEY": "test-api-key",
+            "YANDEX_FOLDER_ID": "test-folder-id",
+        },
+    )
     def test_get_configured_service(self):
         service = get_ocr_service()
 

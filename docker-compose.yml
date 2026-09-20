@@ -1,5 +1,6 @@
 services:
   web:
+    restart: unless-stopped
     build: .
     ports:
       - "8000:8000"
@@ -11,6 +12,6 @@ services:
       DATABASE_PATH: /data/db.sqlite3
       MEDIA_PATH: /data/media
       DEBUG: "False"
-      ALLOWED_HOSTS: localhost,127.0.0.1,web
+      ALLOWED_HOSTS: auditor.konoplev-web.ru,localhost,127.0.0.1,web
       SESSION_COOKIE_SECURE: "False"
       CSRF_COOKIE_SECURE: "False"
